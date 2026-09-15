@@ -1,0 +1,40 @@
+{
+  "pages": {
+    "en": {
+      "Alle Reinigungen erledigt.": "All Cleanings Completed.",
+      "Als erledigt markieren": "Mark as Done",
+      "Anfrage": "Request",
+      "Anreisen heute": "Arrivals Today",
+      "Auschecken": "Check Out",
+      "Bestätigen": "Confirm",
+      "Buchung bestätigen": "Confirm Booking",
+      "Diese Wohnung ist in diesem Zeitraum bereits belegt.": "This apartment is already occupied during this period.",
+      "Einchecken": "Check In",
+      "Eingecheckt": "Checked In",
+      "Erledigt": "Done",
+      "Fällige Reinigungen": "Cleanings Due",
+      "Gast": "Guest",
+      "Jetzt bestätigen": "Confirm Now",
+      "Keine Ankünfte oder Abreisen heute.": "No arrivals or departures today.",
+      "Keine Reinigungskraft": "No Cleaner Assigned",
+      "Keine offenen Anfragen — alles bestätigt.": "No open requests — everything confirmed.",
+      "Neue Buchung": "New Booking",
+      "Offen": "Pending",
+      "Offene Anfragen": "Open Requests",
+      "Reinigung planen": "Schedule Cleaning",
+      "Reinigungen offen": "Cleanings Pending",
+      "Wohnung": "Apartment",
+      "haben unbestätigte Anfragen — Anreise heute oder überfällig.": "have unconfirmed requests — arrival today or overdue.",
+      "hat eine unbestätigte Anfrage — Anreise heute oder überfällig.": "has an unconfirmed request — arrival today or overdue.",
+      "{0} ist gerade eingecheckt.": "{0} is currently checked in.",
+      "{0} reist heute ab.": "{0} is departing today.",
+      "{0} reist heute an.": "{0} is arriving today.",
+      "{0} — Aufenthaltsdauer geändert": "{0} — Length of Stay Changed",
+      "{0} — Buchung bestätigt": "{0} — Booking Confirmed",
+      "{0} — Buchung verschoben": "{0} — Booking Rescheduled",
+      "{0} — Reinigung als erledigt markiert": "{0} — Cleaning Marked as Done",
+      "{0} — Status aktualisiert": "{0} — Status Updated"
+    }
+  },
+  "v": 1
+}

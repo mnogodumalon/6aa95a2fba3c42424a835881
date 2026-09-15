@@ -1,0 +1,25 @@
+Ferienwohnungen Seeblick:
+
+Wir vermieten vier Ferienwohnungen am Chiemsee und wollen Buchungen, Gäste und Reinigung an einem Ort verwalten.
+
+Wer damit arbeitet:
+- Vermieterin (Büro): pflegt Wohnungen und Preise, nimmt Buchungen an, bestätigt, storniert, sieht alles
+- Reinigungskraft: sieht nur ihre Reinigungstermine, häkt sie ab
+- Gäste: können über ein öffentliches Formular eine Buchungsanfrage stellen, ohne Konto
+
+Wohnungen
+Name, Beschreibung, Stockwerk, Schlafplätze, Quadratmeter, Grundpreis pro Nacht, Endreinigung (Preis), Ausstattung (Mehrfachauswahl: Balkon, Seeblick, Küche, WLAN, Parkplatz, Haustiere erlaubt), Foto, Status (verfügbar / gesperrt).
+
+Gäste
+Vorname, Nachname, E-Mail, Telefon, Adresse, Land, Notizen. Ein Gast kann mehrere Buchungen haben.
+
+Buchungen
+Buchungsnummer (Muster B-2026-001), Wohnung, Gast, Anreise, Abreise, Anzahl Personen, Status (Anfrage / Bestätigt / Eingecheckt / Ausgecheckt / Storniert), Gesamtpreis (ergibt sich aus Nächten mal Grundpreis plus Endreinigung), Anzahlung erhalten (ja/nein), Notizen. Zwei Buchungen dürfen sich für dieselbe Wohnung zeitlich nicht überschneiden.
+
+Reinigungen
+Wohnung, Buchung (nach der die gereinigt wird), Datum, Reinigungskraft (Mitarbeiter), Status (Offen / Erledigt), Bemerkungen (z. B. Schäden).
+
+Mitarbeiter
+Vorname, Nachname, Rolle (Vermietung / Reinigung), Telefon, E-Mail, Status (aktiv / inaktiv).
+
+Wichtig: Jede Beziehung soll nur in einer Richtung gespeichert werden. Die Buchung kennt Wohnung und Gast, die Reinigung kennt Wohnung, Buchung und Reinigungskraft. Bitte keine Listenfelder in der Gegenrichtung anlegen.
