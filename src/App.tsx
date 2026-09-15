@@ -10,6 +10,10 @@ import DashboardReady from '@/pages/DashboardReady';
 import PublicPagesAdmin from '@/pages/PublicPagesAdmin';
 import IntentsAdmin from '@/pages/IntentsAdmin';
 // <custom:imports>
+const IntentNeueBuchungPage = lazy(() => import('@/pages/intents/NeueBuchungPage'));
+import { DashboardSkeleton } from '@/components/DashboardStates';
+const IntentBuchungVerwaltenPage = lazy(() => import('@/pages/intents/BuchungVerwaltenPage'));
+const IntentReinigungAbhakenPage = lazy(() => import('@/pages/intents/ReinigungAbhakenPage'));
 // </custom:imports>
 
 // Lazy: public pages live outside <Layout> and only load on /#/public/:slug —
@@ -77,6 +81,9 @@ export default function App() {
                 <Route path="verwaltung/ablaeufe" element={<IntentsAdmin />} />
                 <Route path="verwaltung/oeffentliche-seiten" element={<PublicPagesAdmin />} />
                 {/* <custom:routes> */}
+                <Route path="intents/neue-buchung" element={<Suspense fallback={<DashboardSkeleton />}><IntentNeueBuchungPage /></Suspense>} />
+                <Route path="intents/buchung-verwalten" element={<Suspense fallback={<DashboardSkeleton />}><IntentBuchungVerwaltenPage /></Suspense>} />
+                <Route path="intents/reinigung-abhaken" element={<Suspense fallback={<DashboardSkeleton />}><IntentReinigungAbhakenPage /></Suspense>} />
                 {/* </custom:routes> */}
                 {/* An unknown hash (a bookmark from before a rebuild renamed the
                     flows, a mistyped link) must not be a blank page. */}
