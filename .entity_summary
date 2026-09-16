@@ -64,7 +64,7 @@ createRecordUrl from the service. Note the lowercase `l` in the service path.
   ≡ 4 records at build time
   ⚙ getGaeste() · getGaesteEntry(id) · createGaesteEntry(fields) · updateGaesteEntry(id, fields) · deleteGaesteEntry(id) · queryGaeste({ filter, orderby, limit, offset, fields }) · countGaeste(filter?)
 - Buchungen (buchungen): buchungsnummer!^[string/text], wohnung!^[applookup/select], gast!^[applookup/select], anreise!^[date/date], abreise!^[date/date], anzahl_personen![number], status![lookup/select: anfrage|bestaetigt|eingecheckt|ausgecheckt|storniert], gesamtpreis[number], anzahlung_erhalten[bool], notizen[string/textarea]
-  ≡ 4 records at build time
+  ≡ 5 records at build time
   ◈ anreise+abreise → range candidate — YOU decide in .intents-staging/occupancy.json whether it is a stay, which applookup is the booked resource, which status keys do not occupy (AvailabilityRangePicker, form.range; blocked = occupancyFor()) · status → choice (5 options, ChoiceGroup) · wohnung → record (wohnungen, EntitySelectStep) · gast → record (gaeste, EntitySelectStep)
   ⚙ getBuchungen() · getBuchungenEntry(id) · createBuchungenEntry(fields) · updateBuchungenEntry(id, fields) · deleteBuchungenEntry(id) · queryBuchungen({ filter, orderby, limit, offset, fields }) · countBuchungen(filter?)
   ✚ EnrichedBuchungen adds ONLY wohnungName, gastName — via enrichBuchungen(buchungen, { wohnungenMap, gaesteMap }), all maps required

@@ -29,7 +29,7 @@ export default function ReinigungAbschliessenPage() {
 
   // Schritt 1: Reinigungen mit status=offen suchen
   const reinigungen = useRecordSearch(servicePort, 'reinigungen', {
-    filter: "r.v_status == 'offen'",
+    filter: "r.v_status == 'offen'", /* i18n-exempt */
     where: r => fieldLookup(r, 'status')?.key === 'offen',
     searchFields: ['bemerkungen'],
     orderby: ['r.v_datum asc'],

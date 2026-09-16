@@ -287,7 +287,7 @@ export function GaesteDialog({ open, onClose, onSubmit, defaultValues, recordId,
         <Label htmlFor="vorname">{fieldLabel('gaeste', 'vorname')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Input
           id="vorname"
-          placeholder="z. B. Peter"
+          placeholder=""
           value={fields.vorname ?? ''}
           onChange={e => setFields(f => ({ ...f, vorname: e.target.value }))}
           required
@@ -302,7 +302,7 @@ export function GaesteDialog({ open, onClose, onSubmit, defaultValues, recordId,
         <Label htmlFor="nachname">{fieldLabel('gaeste', 'nachname')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Input
           id="nachname"
-          placeholder="z. B. Schmidt"
+          placeholder=""
           value={fields.nachname ?? ''}
           onChange={e => setFields(f => ({ ...f, nachname: e.target.value }))}
           required
@@ -319,7 +319,7 @@ export function GaesteDialog({ open, onClose, onSubmit, defaultValues, recordId,
           id="email"
           type="email"
           inputMode="email"
-          placeholder="z. B. peter@beispiel.de"
+          placeholder=""
           value={fields.email ?? ''}
           onChange={e => setFields(f => ({ ...f, email: e.target.value }))}
         />
@@ -332,7 +332,7 @@ export function GaesteDialog({ open, onClose, onSubmit, defaultValues, recordId,
           id="telefon"
           type="tel"
           inputMode="tel"
-          placeholder="z. B. 0987 654321"
+          placeholder=""
           value={fields.telefon ?? ''}
           onChange={e => setFields(f => ({ ...f, telefon: e.target.value }))}
         />
@@ -343,7 +343,7 @@ export function GaesteDialog({ open, onClose, onSubmit, defaultValues, recordId,
         <Label htmlFor="strasse">{fieldLabel('gaeste', 'strasse')}</Label>
         <Input
           id="strasse"
-          placeholder="z. B. Hauptstraße"
+          placeholder=""
           value={fields.strasse ?? ''}
           onChange={e => setFields(f => ({ ...f, strasse: e.target.value }))}
         />
@@ -354,7 +354,7 @@ export function GaesteDialog({ open, onClose, onSubmit, defaultValues, recordId,
         <Label htmlFor="hausnummer">{fieldLabel('gaeste', 'hausnummer')}</Label>
         <Input
           id="hausnummer"
-          placeholder="z. B. 42"
+          placeholder=""
           value={fields.hausnummer ?? ''}
           onChange={e => setFields(f => ({ ...f, hausnummer: e.target.value }))}
         />
@@ -365,7 +365,7 @@ export function GaesteDialog({ open, onClose, onSubmit, defaultValues, recordId,
         <Label htmlFor="plz">{fieldLabel('gaeste', 'plz')}</Label>
         <Input
           id="plz"
-          placeholder="z. B. 12345"
+          placeholder=""
           value={fields.plz ?? ''}
           onChange={e => setFields(f => ({ ...f, plz: e.target.value }))}
         />
@@ -376,7 +376,7 @@ export function GaesteDialog({ open, onClose, onSubmit, defaultValues, recordId,
         <Label htmlFor="ort">{fieldLabel('gaeste', 'ort')}</Label>
         <Input
           id="ort"
-          placeholder="z. B. Musterstadt"
+          placeholder=""
           value={fields.ort ?? ''}
           onChange={e => setFields(f => ({ ...f, ort: e.target.value }))}
         />
@@ -387,7 +387,7 @@ export function GaesteDialog({ open, onClose, onSubmit, defaultValues, recordId,
         <Label htmlFor="land">{fieldLabel('gaeste', 'land')}</Label>
         <Input
           id="land"
-          placeholder="z. B. Deutschland"
+          placeholder=""
           value={fields.land ?? ''}
           onChange={e => setFields(f => ({ ...f, land: e.target.value }))}
         />
@@ -398,7 +398,7 @@ export function GaesteDialog({ open, onClose, onSubmit, defaultValues, recordId,
         <Label htmlFor="notizen">{fieldLabel('gaeste', 'notizen')}</Label>
         <Textarea
           id="notizen"
-          placeholder="Anreisezeit, Besonderheiten, Wünsche..."
+          placeholder=""
           value={fields.notizen ?? ''}
           onChange={e => setFields(f => ({ ...f, notizen: e.target.value }))}
           rows={3}

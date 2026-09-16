@@ -65,7 +65,7 @@ export default function BuchungStatusPage() {
   // Schritt 3: Reinigungskräfte — nur Mitarbeiter mit rolle=reinigung und status=aktiv
   const reinigungskraefte = useRecordSearch(servicePort, 'mitarbeiter', {
     searchFields: ['vorname', 'nachname'],
-    filter: "r.v_rolle == 'reinigung' and r.v_status == 'aktiv'",
+    filter: "r.v_rolle == 'reinigung' and r.v_status == 'aktiv'", /* i18n-exempt */
     where: r =>
       fieldLookup(r, 'rolle')?.key === 'reinigung' &&
       fieldLookup(r, 'status')?.key === 'aktiv',

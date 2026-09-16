@@ -2,7 +2,6 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { IconCheck, IconCircleCheck, IconCopy, IconPrinter } from '@tabler/icons-react';
 import { t } from '@/i18n';
-import { makeReference } from '@/lib/journey/reference';
 import { entityLabel } from '@/lib/journey/rules';
 import type { StepForm, SummaryItem } from '@/lib/journey/useStepForm';
 import type { JourneyResult, JourneySubmit } from '@/lib/journey/useJourneySubmit';
@@ -21,10 +20,12 @@ import { INTENTS } from '@/config/intents';
  *
  * Renders ONLY from a `JourneyResult` — the runner sets it after every write
  * succeeded, so this screen can never appear over a half-written journey or
- * be derived from a refetched list. Shows a deterministic reference
- * (`B-42D81A`, from the record id — nothing to store), the facts of what was
- * created, the next logical actions (first = primary), and lets the user copy
- * or print the confirmation.
+ * be derived from a refetched list. Shows the facts of what was created, the
+ * next logical actions (first = primary), and lets the user copy or print the
+ * confirmation. The technical reference (`B-42D81A`, `makeReference` in
+ * lib/journey/reference.ts) is deliberately NOT shown: nothing in the
+ * dashboard accepts it yet, and entities with a business number carry that
+ * number in their facts. Bring it back when a search takes it.
  */
 export interface SuccessAction {
   label: string;
@@ -45,7 +46,8 @@ export interface SuccessStepProps {
   /** … or passed explicitly. */
   facts?: Array<Pick<SummaryItem, 'label' | 'value'>>;
   whatHappensNext?: ReactNode;
-  /** Reference prefix (default: first letter of the entity). */
+  /** Reserved: prefix for a shown reference. Currently unused — the success
+   *  screen shows no technical reference (see docblock). */
   referencePrefix?: string;
   /** The heading's verb. Default: from `result.created` ("angelegt" / "aktualisiert"). */
   verb?: 'created' | 'updated';
@@ -66,7 +68,6 @@ export function SuccessStep({
   forms = [],
   facts,
   whatHappensNext,
-  referencePrefix,
   verb,
   submit,
   restartLabel,
@@ -90,9 +91,6 @@ export function SuccessStep({
   const suppressHeading = wizard?.suppressHeading;
   useEffect(() => suppressHeading?.(), [suppressHeading]);
 
-  // An update-only journey (return a tool, check a guest out) has no new record
-  // and therefore no reference — the screen then shows heading and facts only.
-  const reference = result.primary.id ? makeReference(result.entity ?? '', result.primary.id, referencePrefix) : null;
   const heading = title ?? (result.entity && result.primary.id
     ? t(created ? 'sx_default_title' : 'sx_default_title_updated', { entity: entityLabel(result.entity) })
     : t('sx_saved'));
@@ -104,13 +102,13 @@ export function SuccessStep({
   const rows = (facts ?? (formRows.length > 0 ? formRows : (result.summary ?? []).filter(r => r.value !== '—'))).slice(0, 10);
 
   const copy = async () => {
-    const lines = [heading, ...(reference ? [`${t('sx_reference')}: ${reference}`] : []), ...rows.map(r => `${r.label}: ${r.value}`)];
+    const lines = [heading, ...rows.map(r => `${r.label}: ${r.value}`)];
     try {
       await navigator.clipboard.writeText(lines.join('\n'));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* clipboard blocked — the reference is still on screen */
+      /* clipboard blocked — the facts are still on screen */
     }
   };
 
@@ -138,7 +136,7 @@ export function SuccessStep({
   });
 
   return (
-    <div className="journey-print space-y-6" data-journey-success="" data-reference={reference ?? undefined}>
+    <div className="journey-print space-y-6" data-journey-success="">
       <style>{`@media print { body * { visibility: hidden; } .journey-print, .journey-print * { visibility: visible; } .journey-print { position: absolute; left: 0; top: 0; width: 100%; } .journey-print [data-no-print] { display: none !important; } }`}</style>
 
       <div className="flex items-start gap-4">
@@ -147,11 +145,6 @@ export function SuccessStep({
         </div>
         <div className="min-w-0">
           <h2 className="text-xl font-semibold tracking-tight">{heading}</h2>
-          {reference && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {t('sx_reference')}: <span className="font-mono font-semibold text-foreground tracking-wide">{reference}</span>
-            </p>
-          )}
         </div>
       </div>
 

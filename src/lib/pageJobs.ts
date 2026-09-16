@@ -127,3 +127,14 @@ export async function startPageJob(req: PageJobRequest, handlers: PageJobHandler
   }
   return outcome ?? { status: 'error', message: 'stream ended without a result' };
 }
+
+/**
+ * Fired on `window` whenever this tab starts or finishes a page job, so every
+ * `usePageJobs` instance (sidebar, admin lists) refreshes at once instead of
+ * waiting for its idle poll. Other tabs still rely on polling.
+ */
+export const PAGE_JOBS_EVENT = 'klar:page-jobs';
+
+export function notifyPageJobsChanged(): void {
+  window.dispatchEvent(new Event(PAGE_JOBS_EVENT));
+}

@@ -43,9 +43,9 @@ export interface IntentLink {
 
 export const INTENTS: IntentLink[] = [
   // <custom:intents>
-  { path: '/intents/neue-buchung', label: { de: 'Neue Buchung', en: 'New booking' }, icon: IconCalendarPlus, description: 'Buchung anlegen mit Verfügbarkeitsprüfung in 4 Schritten' },
-  { path: '/intents/buchung-status', label: { de: 'Buchung bearbeiten', en: 'Manage booking' }, icon: IconCheckbox, description: 'Buchung bestätigen, einchecken oder auschecken — mit Reinigung anlegen nach Check-out' },
-  { path: '/intents/reinigung-abschliessen', label: { de: 'Reinigung abhaken', en: 'Complete cleaning' }, icon: IconCircleDot, description: 'Reinigungskraft hakt ihre offene Reinigung als erledigt ab' },
+  { path: '/intents/neue-buchung', label: { de: 'Neue Buchung', en: 'New booking' }, icon: IconCalendarPlus, description: { de: 'Buchung anlegen mit Verfügbarkeitsprüfung in 4 Schritten', en: 'Create Booking with Availability Check in 4 Steps' } },
+  { path: '/intents/buchung-status', label: { de: 'Buchung bearbeiten', en: 'Manage booking' }, icon: IconCheckbox, description: { de: 'Buchung bestätigen, einchecken oder auschecken — mit Reinigung anlegen nach Check-out', en: 'Confirm Booking, Check In or Check Out — Create Cleaning Task after Check-out' } },
+  { path: '/intents/reinigung-abschliessen', label: { de: 'Reinigung abhaken', en: 'Complete cleaning' }, icon: IconCircleDot, description: { de: 'Reinigungskraft hakt ihre offene Reinigung als erledigt ab', en: 'Cleaning Staff Marks Their Open Cleaning Task as Done' } },
   // </custom:intents>
 ];
 
@@ -65,5 +65,5 @@ export const INTENTS_PENDING = false;
  * pulsing "werden erstellt …" in every deployed Phase-1 bundle forever — no
  * code path redeploys Phase 1 without the flag (live 03.09.2026).
  */
-export const INTENTS_PENDING_SINCE: string | null = '2026-09-16T08:44:55+00:00';
+export const INTENTS_PENDING_SINCE: string | null = null;
 export const PENDING_MAX_MINUTES = 30;

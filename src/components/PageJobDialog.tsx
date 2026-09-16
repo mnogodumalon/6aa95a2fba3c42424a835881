@@ -1,22 +1,27 @@
-import { useEffect, useRef, useState } from 'react';
-import { IconLoader2, IconAlertTriangle, IconCheck, IconSparkles } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
+import { IconAlertTriangle, IconSparkles } from '@tabler/icons-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
-import { startPageJob, type PageKind, type PageOp, type PageJobOutcome, type PageJobStage } from '@/lib/pageJobs';
+import { startPageJob, notifyPageJobsChanged, type PageKind, type PageOp, type PageJobOutcome } from '@/lib/pageJobs';
 import { t } from '@/i18n';
 
 /**
  * PageJobDialog — the one place in the dashboard where a page is created,
- * changed or removed by the agent. The owner types a wish, the job starts at
- * once (no second confirm — the prompt IS the decision), the dialog shows the
- * build's stages and ends with "Neu laden". Delete asks for confirmation and
- * runs without a prompt.
+ * changed or removed by the agent. The owner types a wish and submits; the
+ * dialog CLOSES at once and the build runs in the background. The dashboard
+ * stays usable meanwhile: a toast confirms the start, the sidebar shows
+ * "Werden erstellt …" (IntentsNav) and the admin list shows the running row
+ * with its stages (PageJobStatus) — both refresh immediately through
+ * PAGE_JOBS_EVENT. When the job ends, a toast offers "Neu laden"; on failure
+ * the toast names the error and the admin list keeps the failed row with
+ * "Erneut versuchen". Delete asks for confirmation and runs without a prompt.
  *
- * Closing the dialog while the job runs does not stop it: Klar builds on,
- * VersionCheck offers the reload when the new bundle is live.
+ * Nothing about the running job lives in this dialog after submit — the job
+ * runs server-side, and reopening the dialog starts a fresh wish.
  */
 export interface PageJobTarget {
   slug: string;
@@ -37,7 +42,7 @@ export interface PageJobDialogProps {
   initialPrompt?: string;
 }
 
-type Phase = 'idle' | 'running' | 'done' | 'busy' | 'error';
+type Phase = 'idle' | 'starting' | 'busy' | 'error';
 
 function titleKey(kind: PageKind, op: PageOp): string {
   return `pj_title_${op}_${kind}`;
@@ -46,149 +51,103 @@ function titleKey(kind: PageKind, op: PageOp): string {
 export function PageJobDialog({ open, onOpenChange, kind, op, target, onDone, onStarted, initialPrompt }: PageJobDialogProps) {
   const [prompt, setPrompt] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
-  const [stage, setStage] = useState<PageJobStage | null>(null);
-  const [lastStatus, setLastStatus] = useState('');
   const [message, setMessage] = useState('');
-  const startedAt = useRef<number>(0);
-  const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
     if (!open) {
       // A fresh dialog per wish; a running job keeps running server-side.
       setPrompt('');
       setPhase('idle');
-      setStage(null);
-      setLastStatus('');
       setMessage('');
     } else if (initialPrompt) {
       setPrompt(initialPrompt);
     }
   }, [open, initialPrompt]);
 
-  useEffect(() => {
-    if (phase !== 'running') return;
-    const id = window.setInterval(() => setElapsed(Math.round((Date.now() - startedAt.current) / 1000)), 1000);
-    return () => window.clearInterval(id);
-  }, [phase]);
-
   const needsPrompt = op !== 'delete';
   const canStart = phase === 'idle' || phase === 'error' || phase === 'busy';
   const startDisabled = !canStart || (needsPrompt && prompt.trim().length < 3);
+  const title = t(titleKey(kind, op));
+  const errorHint = t(kind === 'flow' ? 'pj_toast_error_hint_flow' : 'pj_toast_error_hint_public');
 
   const run = async () => {
-    setPhase('running');
+    setPhase('starting');
     setMessage('');
-    setStage(null);
-    startedAt.current = Date.now();
-    setElapsed(0);
+    const jobTitle = target ? `${title}: ${target.title}` : title;
     onStarted?.();
+    notifyPageJobsChanged();
+    // Close now — the build is a background job, the dashboard stays usable.
+    onOpenChange(false);
+    toast(jobTitle, { description: t('pj_toast_started'), duration: 6000 });
+
     let outcome: PageJobOutcome;
     try {
-      outcome = await startPageJob(
-        { kind, op, target: target?.slug, prompt: needsPrompt ? prompt.trim() : undefined },
-        {
-          onStage: s => setStage(s),
-          onStatus: line => setLastStatus(line),
-          onWarning: line => setLastStatus(line),
-        },
-      );
+      outcome = await startPageJob({ kind, op, target: target?.slug, prompt: needsPrompt ? prompt.trim() : undefined });
     } catch {
-      setPhase('error');
-      setMessage(t('pj_error_network'));
+      notifyPageJobsChanged();
+      toast.error(jobTitle, { description: t('pj_error_network'), duration: 12000 });
       return;
     }
+    notifyPageJobsChanged();
     if (outcome.status === 'done') {
-      setPhase('done');
       onDone?.();
+      toast.success(jobTitle, {
+        description: t(op === 'delete' ? 'pj_done_delete' : 'pj_done'),
+        duration: 20000,
+        action: { label: t('pj_reload'), onClick: () => window.location.reload() },
+      });
     } else if (outcome.status === 'busy') {
-      setPhase('busy');
-      setMessage(t('pj_busy', { minutes: Math.max(1, Math.floor(outcome.ageSeconds / 60)) }));
+      toast.warning(jobTitle, {
+        description: t('pj_busy', { minutes: Math.max(1, Math.floor(outcome.ageSeconds / 60)) }),
+        duration: 12000,
+      });
     } else {
-      setPhase('error');
-      setMessage(outcome.message);
+      toast.error(`${t('pj_failed')}: ${outcome.message}`, { description: errorHint, duration: 20000 });
     }
   };
-
-  const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
-  const ss = String(elapsed % 60).padStart(2, '0');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t(titleKey(kind, op))}</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           {target ? <DialogDescription>{target.title}</DialogDescription> : null}
         </DialogHeader>
 
-        {phase === 'idle' || phase === 'error' || phase === 'busy' ? (
-          <div className="space-y-3">
-            {needsPrompt ? (
-              <>
-                <label htmlFor="pj-prompt" className="text-sm font-medium">{t('pj_prompt_label')}</label>
-                <Textarea
-                  id="pj-prompt"
-                  value={prompt}
-                  onChange={e => setPrompt(e.target.value)}
-                  rows={4}
-                  autoFocus
-                  placeholder={op === 'edit' ? t('pj_prompt_edit_placeholder') : t(kind === 'flow' ? 'pj_prompt_placeholder_flow' : 'pj_prompt_placeholder_public')}
-                />
-                <p className="text-xs text-muted-foreground">{t('pj_prompt_hint')}</p>
-              </>
-            ) : (
-              <p className="text-sm">{t(kind === 'flow' ? 'pj_delete_flow_text' : 'pj_delete_public_text')}</p>
-            )}
-            {phase === 'error' ? (
-              <div className="flex items-start gap-2 rounded-2xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-                <IconAlertTriangle size={16} stroke={1.5} className="mt-0.5 shrink-0" />
-                <span><span className="font-medium">{t('pj_failed')}:</span> {message}</span>
-              </div>
-            ) : null}
-            {phase === 'busy' ? (
-              <p className="text-sm text-muted-foreground" role="status">{message}</p>
-            ) : null}
-          </div>
-        ) : null}
-
-        {phase === 'running' ? (
-          <div className="space-y-3" role="status" aria-live="polite">
-            <div className="flex items-center gap-2 text-sm">
-              <IconLoader2 size={18} stroke={1.5} className="animate-spin text-primary shrink-0" />
-              <span className="font-medium">{stage?.label ?? t('pj_starting')}</span>
-              <span className="ml-auto tabular-nums text-muted-foreground">{mm}:{ss}</span>
+        <div className="space-y-3">
+          {needsPrompt ? (
+            <>
+              <label htmlFor="pj-prompt" className="text-sm font-medium">{t('pj_prompt_label')}</label>
+              <Textarea
+                id="pj-prompt"
+                value={prompt}
+                onChange={e => setPrompt(e.target.value)}
+                rows={4}
+                autoFocus
+                placeholder={op === 'edit' ? t('pj_prompt_edit_placeholder') : t(kind === 'flow' ? 'pj_prompt_placeholder_flow' : 'pj_prompt_placeholder_public')}
+              />
+              <p className="text-xs text-muted-foreground">{t('pj_prompt_hint')}</p>
+            </>
+          ) : (
+            <p className="text-sm">{t(kind === 'flow' ? 'pj_delete_flow_text' : 'pj_delete_public_text')}</p>
+          )}
+          {phase === 'error' ? (
+            <div className="flex items-start gap-2 rounded-2xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+              <IconAlertTriangle size={16} stroke={1.5} className="mt-0.5 shrink-0" />
+              <span><span className="font-medium">{t('pj_failed')}:</span> {message}</span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-              <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, stage?.pct ?? 5)}%` }} />
-            </div>
-            {lastStatus ? <p className="truncate text-xs text-muted-foreground">{lastStatus}</p> : null}
-            <p className="text-xs text-muted-foreground">{t('pj_running')}</p>
-          </div>
-        ) : null}
-
-        {phase === 'done' ? (
-          <div className="flex items-start gap-2 text-sm" role="status">
-            <IconCheck size={18} stroke={1.5} className="text-primary shrink-0 mt-0.5" />
-            <span>{t(op === 'delete' ? 'pj_done_delete' : 'pj_done')}</span>
-          </div>
-        ) : null}
+          ) : null}
+          {phase === 'busy' ? (
+            <p className="text-sm text-muted-foreground" role="status">{message}</p>
+          ) : null}
+        </div>
 
         <DialogFooter>
-          {phase === 'done' ? (
-            <>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>{t('pj_close')}</Button>
-              <Button onClick={() => window.location.reload()}>{t('pj_reload')}</Button>
-            </>
-          ) : phase === 'running' ? (
-            <Button variant="outline" onClick={() => onOpenChange(false)}>{t('pj_close')}</Button>
-          ) : (
-            <>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>{t('pj_cancel')}</Button>
-              <Button variant={op === 'delete' ? 'destructive' : 'default'} disabled={startDisabled} onClick={run}>
-                {op !== 'delete' ? <IconSparkles size={16} stroke={1.5} className="mr-1" /> : null}
-                {phase === 'error' ? t('pj_retry') : t(op === 'delete' ? 'pj_start_delete' : op === 'edit' ? 'pj_start_edit' : 'pj_start')}
-              </Button>
-            </>
-          )}
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('pj_cancel')}</Button>
+          <Button variant={op === 'delete' ? 'destructive' : 'default'} disabled={startDisabled} onClick={run}>
+            {op !== 'delete' ? <IconSparkles size={16} stroke={1.5} className="mr-1" /> : null}
+            {t(op === 'delete' ? 'pj_start_delete' : op === 'edit' ? 'pj_start_edit' : 'pj_start')}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
