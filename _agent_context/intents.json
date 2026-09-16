@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "flows": [],
+  "unregistered_pages": [
+    {
+      "file": "src/pages/intents/BuchungStatusPage.tsx",
+      "summary": "/**\n * Buchung Status — 4-Schritt-Wizard.\n * Steps: 1) Buchung wählen (aktive Buchungen) → 2) Nächsten Status bestätigen →\n *        3) Reinigung anlegen (nur bei Auschecken, optional) → 4) Prüfen & anlegen.\n * Reads: buchungen (mit EnrichedBuchungen via ctx.ref), mitarbeiter (Reinigungskräfte).\n * Writes: buchungen (status update), reinigungen (create, bedingt).\n * Composes: IntentWizardShell, WizardStep, EntitySelectStep, ChoiceGroup, StepNav,\n *            SummaryStep, SuccessStep, StatusBadge, Field, Bound.\n */",
+      "components": [
+        "Bound",
+        "ChoiceGroup",
+        "EntitySelectStep",
+        "Field",
+        "IntentWizardShell",
+        "StatusBadge",
+        "StepNav",
+        "SuccessStep",
+        "SummaryStep",
+        "WizardStep"
+      ],
+      "writes": []
+    },
+    {
+      "file": "src/pages/intents/NeueBuchungPage.tsx",
+      "summary": "/**\n * Neue Buchung — 4-Schritt-Wizard.\n * Steps: 1) Wohnung wählen → 2) Zeitraum & Personen → 3) Gast wählen → 4) Prüfen & anlegen.\n * Reads: wohnungen (verfügbare), buchungen (Belegung), gaeste.\n * Writes: buchungen (createBuchungenEntry).\n * Composes: IntentWizardShell, WizardStep, EntitySelectStep, AvailabilityRangePicker,\n *           Bound, StepNav, SummaryStep, SuccessStep.\n */",
+      "components": [
+        "AvailabilityRangePicker",
+        "Bound",
+        "EntitySelectStep",
+        "IntentWizardShell",
+        "StepNav",
+        "SuccessStep",
+        "SummaryStep",
+        "WizardStep"
+      ],
+      "writes": []
+    },
+    {
+      "file": "src/pages/intents/ReinigungAbschliessenPage.tsx",
+      "summary": "/**\n * Reinigung abschließen — 3-Schritt-Wizard.\n * Steps: 1) Reinigung wählen (nur status=offen) → 2) Abschluss bestätigen (status + bemerkungen) → 3) Prüfen & speichern.\n * Reads: reinigungen (gefiltert auf offen). Writes: reinigungen (update status=erledigt, bemerkungen).\n * Composes: IntentWizardShell, WizardStep, EntitySelectStep, ChoiceGroup, StepNav, SummaryStep, SuccessStep.\n */",
+      "components": [
+        "Bound",
+        "EntitySelectStep",
+        "IntentWizardShell",
+        "StepNav",
+        "SuccessStep",
+        "SummaryStep",
+        "WizardStep"
+      ],
+      "writes": []
+    }
+  ]
+}

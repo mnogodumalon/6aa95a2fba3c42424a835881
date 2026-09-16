@@ -18,6 +18,7 @@ import {
   type JourneyRecord,
 } from '@/lib/journey';
 import { createPublicPort } from '@/lib/journey/publicPort';
+import type { JourneyPort } from '@/lib/journey/port';
 import { IntentWizardShell, type WizardStep } from '@/components/blocks/IntentWizardShell';
 import { StepNav } from '@/components/blocks/StepNav';
 import { SummaryStep } from '@/components/blocks/SummaryStep';
@@ -38,6 +39,8 @@ import {
   IconCurrencyEuro,
 } from '@tabler/icons-react';
 
+// Null-Port-Stub: liefert leere Ergebnisse bis der echte Port bereit ist.
+// Hooks dürfen nie nach einem Early Return stehen, daher wird der Port niemals null.
 // ── Ausstattungs-Icons ──────────────────────────────────────────────────────
 const AUSSTATTUNG_ICONS: Record<string, React.ReactNode> = {
   seeblick: <IconSunrise size={16} className="shrink-0" />,
@@ -148,6 +151,15 @@ function WohnungCard({
 
 // ── Hauptkomponente ───────────────────────────────────────────────────────────
 export default function Buchungsanfrage() {
+  const NULL_PORT: JourneyPort = {
+  door: 'public',
+  list: async () => [],
+  count: async () => null,
+  get: async () => null,
+  create: async () => { throw new Error(tx('Port not ready')); },
+  ref: () => '',
+};
+
   const STEPS: WizardStep[] = [
   {
     label: tx('Wohnung'),
@@ -198,7 +210,7 @@ export default function Buchungsanfrage() {
   }, []);
 
   const port = useMemo(
-    () => (cfg && page ? createPublicPort(cfg, page) : null),
+    (): JourneyPort => (cfg && page ? createPublicPort(cfg, page) : NULL_PORT),
     [cfg, page],
   );
 
@@ -220,7 +232,7 @@ export default function Buchungsanfrage() {
   });
 
   // ── Record-Suche: Wohnungen (scope im surface.json schränkt bereits auf verfuegbar ein) ──
-  const wohnungenSearch = useRecordSearch(port!, 'wohnungen', {
+  const wohnungenSearch = useRecordSearch(port, 'wohnungen', {
     searchFields: ['name', 'beschreibung'],
     where: (r) => (r.fields.status as { key?: string } | null)?.key === 'verfuegbar',
     orderby: ['r.v_name'],
@@ -232,8 +244,8 @@ export default function Buchungsanfrage() {
   });
 
   // ── Belegung: Buchungen laden ──────────────────────────────────────────────
-  const buchungenSearch = useRecordSearch(port!, 'buchungen', {
-    searchFields: [],
+  const buchungenSearch = useRecordSearch(port, 'buchungen', {
+    searchFields: ['buchungsnummer'],
     orderby: [],
   });
 
@@ -246,13 +258,13 @@ export default function Buchungsanfrage() {
   }, [buchungenSearch.records, selectedWohnungId]);
 
   // Zusätzlich: useOccupancy für isFree-Check
-  const occupancy = useOccupancy(port!, 'buchungen', {
+  const occupancy = useOccupancy(port, 'buchungen', {
     resource: selectedWohnungId,
   });
 
   // ── Submit-Plan: erst Gast, dann Buchung (mit Link auf Gast) ──────────────
   const submit = useJourneySubmit(
-    port!,
+    port,
     [
       {
         key: 'gast',
@@ -382,7 +394,7 @@ export default function Buchungsanfrage() {
 
   // ── Loading / Unavailable ─────────────────────────────────────────────────
   if (loading) return <PublicShell loading />;
-  if (!cfg || !page || !port) return <PublicShell unavailable />;
+  if (!cfg || !page) return <PublicShell unavailable />;
 
   // ── Erfolgsseite ──────────────────────────────────────────────────────────
   if (submit.result) {
