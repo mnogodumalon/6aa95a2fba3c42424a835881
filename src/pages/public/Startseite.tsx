@@ -36,7 +36,9 @@ function parseWohnung(r: PublicRecordResult): Wohnung {
   const ausstattungRaw = r.fields.ausstattung;
   let ausstattung: string[] = [];
   if (Array.isArray(ausstattungRaw)) {
-    ausstattung = ausstattungRaw as string[];
+    ausstattung = (ausstattungRaw as Array<string | { key: string; label: string }>).map(
+      (item) => (typeof item === 'string' ? item : item.key)
+    );
   } else if (typeof ausstattungRaw === 'string' && ausstattungRaw.trim() !== '') {
     ausstattung = [ausstattungRaw];
   }
