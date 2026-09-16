@@ -1,0 +1,43 @@
+{
+  "pages": {
+    "en": {
+      "Abreise heute": "Departure Today",
+      "Alle Reinigungen erledigt.": "All Cleanings Completed.",
+      "Als erledigt markieren": "Mark as Done",
+      "Anfrage": "Request",
+      "Anfragen": "Requests",
+      "Anreise heute": "Arrival Today",
+      "Aufenthalt angepasst": "Stay Adjusted",
+      "Auschecken": "Check Out",
+      "Bestätigen": "Confirm",
+      "Bestätigt": "Confirmed",
+      "Buchung verschoben": "Booking Rescheduled",
+      "Dieser Zeitraum ist bereits belegt": "This period is already occupied",
+      "Einchecken": "Check In",
+      "Eingecheckt": "Checked In",
+      "Erledigt": "Done",
+      "Gast": "Guest",
+      "Gesperrt": "Blocked",
+      "Heute & morgen": "Today & Tomorrow",
+      "Heute keine An- oder Abreisen.": "No arrivals or departures today.",
+      "Jetzt bestätigen": "Confirm Now",
+      "Keine An- oder Abreisen heute.": "No arrivals or departures today.",
+      "Neue Buchung": "New Booking",
+      "Offene Reinigungen": "Open Cleanings",
+      "Reinigung als erledigt markiert": "Cleaning Marked as Done",
+      "Reinigung planen": "Schedule Cleaning",
+      "Reinigungen heute": "Cleanings Today",
+      "Status aktualisiert": "Status Updated",
+      "Umsatz aktiv": "Revenue Active",
+      "Unbesetzt": "Vacant",
+      "Wohnung": "Apartment",
+      "bestätigt": "confirmed",
+      "wartet auf Bestätigung": "waiting for confirmation",
+      "{0} offene {1} warten auf Bestätigung.": "{0} open {1} waiting for confirmation.",
+      "{0} reist ab": "{0} is checking out",
+      "{0} reist an": "{0} is checking in",
+      "— {0} Anfragen warten auf Bestätigung": "— {0} requests waiting for confirmation"
+    }
+  },
+  "v": 1
+}
