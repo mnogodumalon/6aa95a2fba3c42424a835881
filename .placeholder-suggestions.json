@@ -1,0 +1,53 @@
+{
+  "MitarbeiterDialog.tsx": {
+    "vorname": "z. B. Anna",
+    "nachname": "z. B. Müller",
+    "rolle": "Wähle Rolle",
+    "telefon": "z. B. 0123 456789",
+    "email": "z. B. anna@beispiel.de",
+    "status": "Wähle Status"
+  },
+  "WohnungenDialog.tsx": {
+    "name": "z. B. Seeblick Deluxe",
+    "beschreibung": "Ausstattung, Lage, Besonderheiten...",
+    "stockwerk": "z. B. 2",
+    "schlafplaetze": "z. B. 4",
+    "quadratmeter": "z. B. 120",
+    "grundpreis_pro_nacht": "z. B. 99,50",
+    "endreinigung_preis": "z. B. 50,00",
+    "ausstattung": "Haustiere, Balkon, Küche...",
+    "status": "Wähle Status"
+  },
+  "GaesteDialog.tsx": {
+    "vorname": "z. B. Peter",
+    "nachname": "z. B. Schmidt",
+    "email": "z. B. peter@beispiel.de",
+    "telefon": "z. B. 0987 654321",
+    "strasse": "z. B. Hauptstraße",
+    "hausnummer": "z. B. 42",
+    "plz": "z. B. 12345",
+    "ort": "z. B. Musterstadt",
+    "land": "z. B. Deutschland",
+    "notizen": "Anreisezeit, Besonderheiten, Wünsche..."
+  },
+  "BuchungenDialog.tsx": {
+    "buchungsnummer": "z. B. BU-2026-001",
+    "wohnung": "Welche Wohnung?",
+    "gast": "Welcher Gast?",
+    "anreise": "Wann kommt der Gast?",
+    "abreise": "Wann reist der Gast ab?",
+    "anzahl_personen": "z. B. 2",
+    "status": "Wähle Status",
+    "gesamtpreis": "Wird berechnet",
+    "anzahlung_erhalten": "Anzahlung eingegangen?",
+    "notizen": "Besondere Wünsche, Haustiere, Anmerkungen..."
+  },
+  "ReinigungenDialog.tsx": {
+    "wohnung": "Welche Wohnung reinigen?",
+    "buchung": "Buchung verknüpfen (optional)",
+    "datum": "Wann ist die Reinigung?",
+    "reinigungskraft": "Wer reinigt?",
+    "status": "Wähle Status",
+    "bemerkungen": "Besonderheiten, Schäden, Probleme..."
+  }
+}

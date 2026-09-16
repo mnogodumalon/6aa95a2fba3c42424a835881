@@ -1,0 +1,41 @@
+{
+  "pages": {
+    "en": {
+      "Abreise heute": "Departing Today",
+      "Als erledigt markieren": "Mark as Done",
+      "Anfrage bestätigen": "Confirm Request",
+      "Anfragen": "Requests",
+      "Anreise heute": "Arriving Today",
+      "Anreisen (nächste 7 Tage)": "Arrivals (Next 7 Days)",
+      "Anreisen heute": "Arrivals Today",
+      "Auschecken": "Check Out",
+      "Bestätigen": "Confirm",
+      "Buchung": "Booking",
+      "Buchung anlegen": "Create Booking",
+      "Buchung verschoben": "Booking Rescheduled",
+      "Diese Wohnung ist im gewählten Zeitraum bereits belegt.": "This apartment is already booked for the selected period.",
+      "Einchecken": "Check In",
+      "Eingecheckt": "Checked In",
+      "Erledigt": "Done",
+      "Gast": "Guest",
+      "Heute sind keine An- oder Abreisen geplant.": "No arrivals or departures scheduled for today.",
+      "Heute!": "Today!",
+      "Keine Anreisen in den nächsten 7 Tagen.": "No arrivals in the next 7 days.",
+      "Keine Reinigungskraft": "No Cleaner",
+      "Keine offenen Reinigungen — alles erledigt.": "No open cleanings — all done.",
+      "Offene Reinigungen": "Open Cleanings",
+      "Reinigung erledigt": "Cleaning Done",
+      "Reinigung hinzufügen": "Add Cleaning",
+      "Reinigungen offen": "Cleanings Pending",
+      "Wohnung": "Apartment",
+      "Zeitraum angepasst": "Period Adjusted",
+      "ausgecheckt": "checked out",
+      "eingecheckt": "checked in",
+      "haben Anfragen gestellt — bitte bestätigen.": "have submitted requests — please confirm.",
+      "hat eine Anfrage gestellt — bitte bestätigen.": "has submitted a request — please confirm.",
+      "{0} Reinigung(en) offen": "{0} Cleaning(s) Pending",
+      "{0} — bestätigt": "{0} — confirmed"
+    }
+  },
+  "v": 1
+}
