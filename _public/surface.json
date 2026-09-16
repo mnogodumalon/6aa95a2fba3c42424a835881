@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "pages": [
+    {
+      "slug": "buchungsanfrage",
+      "component": "Buchungsanfrage",
+      "title": "Buchungsanfrage — Ferienwohnung am Chiemsee",
+      "endpoints": [
+        {
+          "entity": "wohnungen",
+          "op": "list",
+          "fields": [
+            "name",
+            "beschreibung",
+            "schlafplaetze",
+            "grundpreis_pro_nacht",
+            "ausstattung",
+            "foto",
+            "status"
+          ],
+          "scope": "r.v_status == 'verfuegbar'",
+          "scope_description": "Zeigt nur Wohnungen mit Status 'verfügbar'",
+          "max_records": 50
+        },
+        {
+          "entity": "buchungen",
+          "op": "list",
+          "fields": [
+            "wohnung",
+            "anreise",
+            "abreise",
+            "status"
+          ],
+          "scope": "r.v_status not in ['storniert']",
+          "scope_description": "Zeigt alle Buchungen außer stornierten — zur Verfügbarkeitsprüfung",
+          "max_records": 500
+        },
+        {
+          "entity": "gaeste",
+          "op": "create",
+          "fields": [
+            "vorname",
+            "nachname",
+            "email",
+            "telefon"
+          ]
+        },
+        {
+          "entity": "buchungen",
+          "op": "create",
+          "fields": [
+            "wohnung",
+            "gast",
+            "anreise",
+            "abreise",
+            "anzahl_personen"
+          ],
+          "preset_fields": {
+            "status": "anfrage"
+          }
+        }
+      ]
+    }
+  ]
+}
