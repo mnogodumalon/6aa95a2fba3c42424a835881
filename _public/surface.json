@@ -60,6 +60,31 @@
           }
         }
       ]
+    },
+    {
+      "slug": "startseite",
+      "component": "Startseite",
+      "title": "Ferienwohnungen",
+      "endpoints": [
+        {
+          "entity": "wohnungen",
+          "op": "list",
+          "fields": [
+            "name",
+            "beschreibung",
+            "schlafplaetze",
+            "quadratmeter",
+            "grundpreis_pro_nacht",
+            "endreinigung_preis",
+            "ausstattung",
+            "foto",
+            "status"
+          ],
+          "scope": "r.v_status == 'verfuegbar'",
+          "scope_description": "Zeigt nur Wohnungen mit Status 'verfügbar'",
+          "max_records": 50
+        }
+      ]
     }
   ]
 }
