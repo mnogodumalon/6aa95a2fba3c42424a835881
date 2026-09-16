@@ -245,6 +245,12 @@ export function EntitySelectStep({
 }: EntitySelectStepProps) {
   const [search, setSearch] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
+  // The keyboard cursor of the combobox list is only painted once the user
+  // has actually moved it (arrow keys). Painted from the start, row 1 looked
+  // "selected" while the real pick only carried a check mark — two rows with
+  // opposite meaning, same colour. Enter still takes rows[activeIdx] (row 1
+  // after typing), the cursor is just invisible until it is steered.
+  const [cursorVisible, setCursorVisible] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const listId = useId();
 
@@ -426,9 +432,11 @@ export function EntitySelectStep({
     function handleKey(e: React.KeyboardEvent) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
+        setCursorVisible(true);
         setActiveIdx(i => Math.min(i + 1, rows.length - 1));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
+        setCursorVisible(true);
         setActiveIdx(i => Math.max(i - 1, 0));
       } else if (e.key === 'Enter') {
         e.preventDefault();
@@ -450,11 +458,12 @@ export function EntitySelectStep({
               aria-expanded={true}
               aria-controls={listId}
               aria-autocomplete="list"
+              aria-activedescendant={cursorVisible && rows[activeIdx] ? `${listId}-opt-${activeIdx}` : undefined}
               autoFocus
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder}
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => { setSearch(e.target.value); setActiveIdx(0); setCursorVisible(false); }}
               onKeyDown={handleKey}
               className="pl-9"
             />
@@ -477,18 +486,22 @@ export function EntitySelectStep({
             <ul id={listId} role="listbox" aria-multiselectable={multi || undefined} className="max-h-[22rem] overflow-y-auto rounded-2xl border border-border divide-y divide-border list-none m-0 p-0">
               {rows.map((item, idx) => {
                 const selected = isSelected(item.id);
+                const cursor = cursorVisible && idx === activeIdx;
                 const [bg, ink] = toneFor(item.id);
+                // Colour says "selected" (accent + check, as in the chip and
+                // card modes); the keyboard cursor is a focus ring, never a fill.
                 return (
                   <li key={item.id} className="min-w-0">
                     <button
                       type="button"
+                      id={`${listId}-opt-${idx}`}
                       role="option"
                       aria-selected={selected}
                       onMouseDown={e => e.preventDefault()}
-                      onClick={() => pick(item.id)}
+                      onClick={() => { setActiveIdx(idx); setCursorVisible(false); pick(item.id); }}
                       className={`w-full text-left flex items-center gap-3 px-3.5 py-2.5 transition-colors focus-visible:outline-none ${
-                        idx === activeIdx ? 'bg-accent' : 'bg-card hover:bg-accent/60'
-                      }`}
+                        selected ? 'bg-accent' : 'bg-card hover:bg-muted/60'
+                      } ${cursor ? 'ring-2 ring-inset ring-primary/40' : ''}`}
                     >
                       {item.icon ? (
                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary">

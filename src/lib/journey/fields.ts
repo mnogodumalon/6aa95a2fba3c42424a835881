@@ -22,10 +22,7 @@ function raw(r: JourneyRecord, key: string): unknown {
   return r.fields ? r.fields[key] : undefined;
 }
 
-/** A lookup value as `{ key, label }`, or null. Accepts the API object and a
- *  bare key string (label = key), never throws. */
-export function fieldLookup(r: JourneyRecord, key: string): LookupValue | null {
-  const v = raw(r, key);
+function lookupValue(v: unknown): LookupValue | null {
   if (v === null || v === undefined || v === '') return null;
   if (typeof v === 'string') return { key: v, label: v };
   if (typeof v === 'object') {
@@ -36,6 +33,24 @@ export function fieldLookup(r: JourneyRecord, key: string): LookupValue | null {
     return { key: k, label: l };
   }
   return null;
+}
+
+/** A lookup value as `{ key, label }`, or null. Accepts the API object and a
+ *  bare key string (label = key), never throws. */
+export function fieldLookup(r: JourneyRecord, key: string): LookupValue | null {
+  return lookupValue(raw(r, key));
+}
+
+/** A multi-value lookup (`multiplelookup`) as `{ key, label }[]` — each element
+ *  normalised like fieldLookup, a single value becomes a one-element list,
+ *  empty → []. Both doors deliver objects (the public port hydrates the grant's
+ *  bare keys); a live landing page cast `ausstattung as string[]` and handed
+ *  React the objects as children — React #31 for every visitor, green through
+ *  tsc. Compare `.key`, show `.label`. */
+export function fieldLookups(r: JourneyRecord, key: string): LookupValue[] {
+  const v = raw(r, key);
+  const list: unknown[] = Array.isArray(v) ? v : v === null || v === undefined || v === '' ? [] : [v];
+  return list.map(lookupValue).filter((x): x is LookupValue => x !== null);
 }
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?$/;

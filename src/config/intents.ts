@@ -43,9 +43,9 @@ export interface IntentLink {
 
 export const INTENTS: IntentLink[] = [
   // <custom:intents>
-  { path: '/intents/neue-buchung', label: { de: 'Neue Buchung', en: 'New booking' }, icon: IconCalendarPlus, description: 'Buchungsanfrage in 4 Schritten anlegen — Wohnung, Zeitraum, Gast, Bestätigung' },
-  { path: '/intents/buchung-status', label: { de: 'Buchung bearbeiten', en: 'Update booking' }, icon: IconClipboardCheck, description: 'Buchungsstatus fortschreiben — Bestätigen, Einchecken, Auschecken oder Stornieren' },
-  { path: '/intents/reinigung-erfassen', label: { de: 'Reinigung erfassen', en: 'Log cleaning' }, icon: IconSpray, description: 'Reinigungstermin nach einer Buchung anlegen oder als erledigt abhaken' },
+  { path: '/intents/neue-buchung', label: { de: 'Neue Buchung', en: 'New booking' }, icon: IconCalendarPlus, description: { de: 'Buchungsanfrage in 4 Schritten anlegen — Wohnung, Zeitraum, Gast, Bestätigung', en: 'Create a booking request in 4 steps — Apartment, Period, Guest, Confirmation' } },
+  { path: '/intents/buchung-status', label: { de: 'Buchung bearbeiten', en: 'Update booking' }, icon: IconClipboardCheck, description: { de: 'Buchungsstatus fortschreiben — Bestätigen, Einchecken, Auschecken oder Stornieren', en: 'Update booking status — Confirm, Check In, Check Out, or Cancel' } },
+  { path: '/intents/reinigung-erfassen', label: { de: 'Reinigung erfassen', en: 'Log cleaning' }, icon: IconSpray, description: { de: 'Reinigungstermin nach einer Buchung anlegen oder als erledigt abhaken', en: 'Schedule a cleaning appointment after a booking or mark it as completed' } },
   // </custom:intents>
 ];
 
@@ -65,5 +65,5 @@ export const INTENTS_PENDING = false;
  * pulsing "werden erstellt …" in every deployed Phase-1 bundle forever — no
  * code path redeploys Phase 1 without the flag (live 03.09.2026).
  */
-export const INTENTS_PENDING_SINCE: string | null = '2026-09-16T10:41:23+00:00';
+export const INTENTS_PENDING_SINCE: string | null = null;
 export const PENDING_MAX_MINUTES = 30;

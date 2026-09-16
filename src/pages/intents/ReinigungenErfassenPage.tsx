@@ -40,7 +40,7 @@ export default function ReinigungenErfassenPage() {
 
   // ── Sub-flow A: Buchung auswählen (ausgecheckt) ──────────────────────────
   const buchungen = useRecordSearch(servicePort, 'buchungen', {
-    filter: "r.v_status == 'ausgecheckt'",
+    filter: "r.v_status == 'ausgecheckt'", /* i18n-exempt */
     where: r => fieldLookup(r, 'status')?.key === 'ausgecheckt',
     searchFields: ['buchungsnummer'],
     toItem: b => ({
@@ -52,7 +52,7 @@ export default function ReinigungenErfassenPage() {
 
   // ── Sub-flow A: Reinigungskraft (nur rolle=reinigung) ────────────────────
   const reinigungskraefte = useRecordSearch(servicePort, 'mitarbeiter', {
-    filter: "r.v_rolle == 'reinigung'",
+    filter: "r.v_rolle == 'reinigung'", /* i18n-exempt */
     where: r => fieldLookup(r, 'rolle')?.key === 'reinigung',
     searchFields: ['vorname', 'nachname'],
     toItem: m => ({
@@ -70,7 +70,7 @@ export default function ReinigungenErfassenPage() {
 
   // ── Sub-flow B: Offene Reinigungen ───────────────────────────────────────
   const offeneReinigungen = useRecordSearch(servicePort, 'reinigungen', {
-    filter: "r.v_status == 'offen'",
+    filter: "r.v_status == 'offen'", /* i18n-exempt */
     where: r => fieldLookup(r, 'status')?.key === 'offen',
     searchFields: ['bemerkungen'],
     toItem: (r, _ctx) => ({

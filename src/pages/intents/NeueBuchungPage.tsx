@@ -60,7 +60,7 @@ export default function NeueBuchungPage() {
 
   // Wohnungen: only verfuegbar
   const wohnungen = useRecordSearch(servicePort, 'wohnungen', {
-    filter: "r.v_status == 'verfuegbar'",
+    filter: "r.v_status == 'verfuegbar'", /* i18n-exempt */
     where: r => fieldLookup(r, 'status')?.key === 'verfuegbar',
     searchFields: ['name'],
     toItem: w => ({

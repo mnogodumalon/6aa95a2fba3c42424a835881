@@ -170,6 +170,55 @@ for (const file of pageFiles) {
     }
   }
 
+  // 3n. Lookup values are `{ key, label }` on BOTH doors (the public port
+  //     hydrates the grant's bare keys), a multiplelookup an ARRAY of them. A
+  //     live landing page cast `ausstattung as string[]` and handed React the
+  //     objects as children — React #31 for every visitor, green through tsc.
+  if (appMeta) {
+    const lookupKinds = new Map();
+    for (const app of Object.values(appMeta.apps || {})) {
+      for (const [k, c] of Object.entries(app?.controls || {})) {
+        const ft = c?.fulltype || '';
+        if (ft.startsWith('lookup') || ft.startsWith('multiplelookup')) lookupKinds.set(k, ft);
+      }
+    }
+    const CAST_RE = /\.fields(?:\.(\w+)|\[['"](\w+)['"]\])\s+as\s+(?:string(?:\s*\[\s*\])?|Array<string>)/g;
+    for (const m of src.matchAll(CAST_RE)) {
+      const key = m[1] || m[2];
+      const ft = lookupKinds.get(key);
+      if (!ft) continue;
+      const line = src.slice(0, m.index).split('\n').length;
+      const multi = ft.startsWith('multiple');
+      const helper = multi ? `fieldLookups(r, '${key}')` : `fieldLookup(r, '${key}')`;
+      errors.push(`${file}:${line}: \`fields.${key} as string${multi ? '[]' : ''}\` — '${key}' is a ${ft} field: the port delivers { key, label }${multi ? ' as an array' : ''} on both doors, and a string cast renders the object as a React child (React #31, live). Read it with ${helper} from '@/lib/journey', compare .key, show .label`);
+    }
+  }
+
+  // 3o. <WizardStep> children are the step list — the shell renders the
+  //     current one by position. Wrapping them in `{step === n && …}` leaves
+  //     the shell with ONE child from step 2 on, nodes[n-1] is undefined and
+  //     the visitor sees a heading without fields or "Weiter" (live, public
+  //     page, green through every gate). Either all <WizardStep> children
+  //     unconditionally, or `steps={…}` with plain `{step === n && <>…</>}`.
+  {
+    const COND_STEP_RE = /\{\s*(?:step|currentStep|activeStep)\s*===\s*(\d+)\s*&&[^<]{0,120}<WizardStep\b/g;
+    for (const m of src.matchAll(COND_STEP_RE)) {
+      const line = src.slice(0, m.index).split('\n').length;
+      errors.push(`${file}:${line}: <WizardStep> rendered conditionally (step === ${m[1]} && …) — the shell shows the current step itself and selects children by position; a conditional child leaves every later step empty (live: only the heading, no fields, no "Weiter"). Render all <WizardStep> children unconditionally, or drop WizardStep and keep the branches with a steps={…} prop`);
+    }
+  }
+  // 3p. A raw <input> has no styling in this scaffold — a live page's fields
+  //     were invisible (className="input" is not a Tailwind class). Bound
+  //     controls render through <Input> from '@/components/ui/input' (spread
+  //     f.field('key')) or through <Bound>.
+  {
+    const RAW_INPUT_RE = /<input\b(?![^>]*type=["']hidden["'])/g;
+    for (const m of src.matchAll(RAW_INPUT_RE)) {
+      const line = src.slice(0, m.index).split('\n').length;
+      errors.push(`${file}:${line}: raw <input> — unstyled in this scaffold (a live page's fields were invisible). Use <Input {...f.field('key')} /> from '@/components/ui/input' inside <Field>, or <Bound form={f} name="key" />`);
+    }
+  }
+
   // `cond ? listPublicRecords(…) : Promise.resolve({})` — the untyped {}
   // widens the Promise.all tuple, Object.values() then yields unknown[] and
   // every `r.fields` access is TS18046 (11 errors in one live page, first
@@ -326,6 +375,23 @@ function checkEndpoint(slug, ep, pageSrc, pageFile, where = SURFACE) {
     }
     if (/\btoday\b/.test(ep.scope)) {
       errors.push(`${where}: page '${slug}' endpoint '${ep.entity}' scope uses 'today' — vSQL has no today, the current time is now()`);
+    }
+  }
+  // 3q. A preset/default VALUE for a lookup field must be one of the field's
+  //     options — and the one the owner asked for. Three live pages turned
+  //     public requests into `angenommen`, `geplant` and `aktiv` because the
+  //     agent took the first option instead of the owner's word.
+  if (ep.op === 'create' && appMeta) {
+    const controls = appMeta.apps?.[ep.entity]?.controls || {};
+    for (const [bag, obj] of [['preset_fields', ep.preset_fields], ['default_fields', ep.default_fields]]) {
+      for (const [key, val] of Object.entries(obj || {})) {
+        const c = controls[key];
+        const options = c?.lookup_data && typeof c.lookup_data === 'object' ? Object.keys(c.lookup_data) : null;
+        if (!options || typeof val !== 'string') continue;
+        if (!options.includes(val)) {
+          errors.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${val}', which is not an option of that field — valid keys: ${options.join(', ')}. Take the option the owner named (match its label); if none matches, leave the preset OUT and say so in your summary — never the first option`);
+        }
+      }
     }
   }
   // A list endpoint without an explicit projection is rejected by the

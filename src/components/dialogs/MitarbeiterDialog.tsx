@@ -311,7 +311,7 @@ export function MitarbeiterDialog({ open, onClose, onSubmit, defaultValues, reco
         <Label htmlFor="vorname">{fieldLabel('mitarbeiter', 'vorname')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Input
           id="vorname"
-          placeholder="z. B. Michael"
+          placeholder=""
           value={fields.vorname ?? ''}
           onChange={e => setFields(f => ({ ...f, vorname: e.target.value }))}
           required
@@ -326,7 +326,7 @@ export function MitarbeiterDialog({ open, onClose, onSubmit, defaultValues, reco
         <Label htmlFor="nachname">{fieldLabel('mitarbeiter', 'nachname')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Input
           id="nachname"
-          placeholder="z. B. Schmidt"
+          placeholder=""
           value={fields.nachname ?? ''}
           onChange={e => setFields(f => ({ ...f, nachname: e.target.value }))}
           required
@@ -379,7 +379,7 @@ export function MitarbeiterDialog({ open, onClose, onSubmit, defaultValues, reco
           id="telefon"
           type="tel"
           inputMode="tel"
-          placeholder="z. B. 030 12345678"
+          placeholder=""
           value={fields.telefon ?? ''}
           onChange={e => setFields(f => ({ ...f, telefon: e.target.value }))}
         />
@@ -392,7 +392,7 @@ export function MitarbeiterDialog({ open, onClose, onSubmit, defaultValues, reco
           id="email"
           type="email"
           inputMode="email"
-          placeholder="z. B. michael@example.com"
+          placeholder=""
           value={fields.email ?? ''}
           onChange={e => setFields(f => ({ ...f, email: e.target.value }))}
         />

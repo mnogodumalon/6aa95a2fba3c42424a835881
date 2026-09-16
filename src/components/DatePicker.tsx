@@ -151,6 +151,11 @@ export function DatePicker({
 
   const minDate = min ? parseValue(min, 'date') ?? undefined : undefined;
   const maxDate = max ? parseValue(max, 'date') ?? undefined : undefined;
+  // Month and year are dropdowns, not only prev/next arrows: a birth date or
+  // a contract start decades back is otherwise hundreds of clicks away. The
+  // year range follows min/max when given, else 1900 … ten years ahead.
+  const startMonth = minDate ?? new Date(1900, 0, 1);
+  const endMonth = maxDate ?? new Date(new Date().getFullYear() + 10, 11, 31);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -189,6 +194,10 @@ export function DatePicker({
           mode="single"
           locale={dateFnsLocale()}
           selected={date ?? undefined}
+          defaultMonth={date ?? undefined}
+          captionLayout="dropdown"
+          startMonth={startMonth}
+          endMonth={endMonth}
           onSelect={commitDate}
           disabled={
             minDate || maxDate

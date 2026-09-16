@@ -273,8 +273,25 @@ export function IntentWizardShell({
       </div>
     );
   })() : null;
+  // The step body: by position among the <WizardStep> children — or, when a
+  // page rendered its WizardSteps conditionally ({step === 2 && <WizardStep>})
+  // next to a `steps` prop, by label, else as the sole child. Live: a public
+  // page did exactly that, nodes[1] was undefined from step 2 on and the
+  // visitor saw only the heading — no fields, no "Weiter", green through
+  // every gate. check-intents/check-public now reject the pattern; the shell
+  // renders the step anyway for pages already deployed.
+  const currentDef = steps[currentStep - 1];
+  const byIndex = fromChildren.nodes[currentStep - 1];
+  const byLabel = currentDef ? fromChildren.defs.findIndex(d => d.label === currentDef.label) : -1;
+  const stepBody: ReactNode = byIndex !== undefined
+    ? byIndex
+    : byLabel >= 0
+      ? fromChildren.nodes[byLabel]
+      : fromChildren.nodes.length === 1
+        ? fromChildren.nodes[0]
+        : null;
   const content: ReactNode = fromChildren.defs.length > 0
-    ? <>{unmetNode ?? fromChildren.nodes[currentStep - 1] ?? null}{fromChildren.rest}</>
+    ? <>{unmetNode ?? stepBody}{fromChildren.rest}</>
     : children;
   const [searchParams, setSearchParams] = useSearchParams();
   const [returnTo, setReturnTo] = useState<number | null>(null);

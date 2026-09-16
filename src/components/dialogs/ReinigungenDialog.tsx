@@ -404,7 +404,7 @@ export function ReinigungenDialog({ open, onClose, onSubmit, defaultValues, reco
         <Label htmlFor="wohnung">{fieldLabel('reinigungen', 'wohnung')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Combobox
           id="wohnung"
-          placeholder="Wohnung wählen"
+          placeholder=""
           items={wohnungenListAll.map(r => ({
             id: r.record_id,
             label: String(r.fields.name ?? r.record_id),
@@ -424,7 +424,7 @@ export function ReinigungenDialog({ open, onClose, onSubmit, defaultValues, reco
         <Label htmlFor="buchung">{fieldLabel('reinigungen', 'buchung')}</Label>
         <Combobox
           id="buchung"
-          placeholder="Zugehörige Buchung (optional)"
+          placeholder=""
           items={buchungenListAll.map(r => ({
             id: r.record_id,
             label: String(r.fields.buchungsnummer ?? r.record_id),
@@ -441,7 +441,7 @@ export function ReinigungenDialog({ open, onClose, onSubmit, defaultValues, reco
         <Label htmlFor="datum">{fieldLabel('reinigungen', 'datum')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <DatePicker
           id="datum"
-          placeholder="Wann ist der Reinigungstermin?"
+          placeholder=""
           mode="date"
           value={fields.datum ?? null}
           onChange={v => setFields(f => ({ ...f, datum: v ?? undefined }))}
@@ -457,7 +457,7 @@ export function ReinigungenDialog({ open, onClose, onSubmit, defaultValues, reco
         <Label htmlFor="reinigungskraft">{fieldLabel('reinigungen', 'reinigungskraft')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Combobox
           id="reinigungskraft"
-          placeholder="Reinigungskraft zuweisen"
+          placeholder=""
           items={mitarbeiterListAll.map(r => ({
             id: r.record_id,
             label: String(r.fields.vorname ?? r.record_id),
@@ -513,7 +513,7 @@ export function ReinigungenDialog({ open, onClose, onSubmit, defaultValues, reco
         <Label htmlFor="bemerkungen">{fieldLabel('reinigungen', 'bemerkungen')}</Label>
         <Textarea
           id="bemerkungen"
-          placeholder="Besonderheiten, Schäden, Notizen..."
+          placeholder=""
           value={fields.bemerkungen ?? ''}
           onChange={e => setFields(f => ({ ...f, bemerkungen: e.target.value }))}
           rows={3}

@@ -321,7 +321,7 @@ export function WohnungenDialog({ open, onClose, onSubmit, defaultValues, record
         <Label htmlFor="name">{fieldLabel('wohnungen', 'name')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Input
           id="name"
-          placeholder="z. B. Seeblick Deluxe"
+          placeholder=""
           value={fields.name ?? ''}
           onChange={e => setFields(f => ({ ...f, name: e.target.value }))}
           required
@@ -336,7 +336,7 @@ export function WohnungenDialog({ open, onClose, onSubmit, defaultValues, record
         <Label htmlFor="beschreibung">{fieldLabel('wohnungen', 'beschreibung')}</Label>
         <Textarea
           id="beschreibung"
-          placeholder="Ausstattung, Besonderheiten..."
+          placeholder=""
           value={fields.beschreibung ?? ''}
           onChange={e => setFields(f => ({ ...f, beschreibung: e.target.value }))}
           rows={3}
@@ -352,7 +352,7 @@ export function WohnungenDialog({ open, onClose, onSubmit, defaultValues, record
           inputMode="decimal"
           step="any"
           {...numberInputProps(formEnhancements, 'stockwerk')}
-          placeholder="z. B. 2"
+          placeholder=""
           value={fields.stockwerk !== undefined ? fields.stockwerk : (computedValues['stockwerk'] ?? '')}
           onChange={e => setFields(f => ({ ...f, stockwerk: clampNumberValue(formEnhancements, 'stockwerk', e.target.value) }))}
         />
@@ -367,7 +367,7 @@ export function WohnungenDialog({ open, onClose, onSubmit, defaultValues, record
           inputMode="decimal"
           step="any"
           {...numberInputProps(formEnhancements, 'schlafplaetze')}
-          placeholder="z. B. 4"
+          placeholder=""
           value={fields.schlafplaetze !== undefined ? fields.schlafplaetze : (computedValues['schlafplaetze'] ?? '')}
           onChange={e => setFields(f => ({ ...f, schlafplaetze: clampNumberValue(formEnhancements, 'schlafplaetze', e.target.value) }))}
         />
@@ -385,7 +385,7 @@ export function WohnungenDialog({ open, onClose, onSubmit, defaultValues, record
           inputMode="decimal"
           step="any"
           {...numberInputProps(formEnhancements, 'quadratmeter')}
-          placeholder="z. B. 75,5"
+          placeholder=""
           value={fields.quadratmeter !== undefined ? fields.quadratmeter : (computedValues['quadratmeter'] ?? '')}
           onChange={e => setFields(f => ({ ...f, quadratmeter: clampNumberValue(formEnhancements, 'quadratmeter', e.target.value) }))}
         />
@@ -400,7 +400,7 @@ export function WohnungenDialog({ open, onClose, onSubmit, defaultValues, record
           inputMode="decimal"
           step="any"
           {...numberInputProps(formEnhancements, 'grundpreis_pro_nacht')}
-          placeholder="z. B. 89,99"
+          placeholder=""
           value={fields.grundpreis_pro_nacht !== undefined ? fields.grundpreis_pro_nacht : (computedValues['grundpreis_pro_nacht'] ?? '')}
           onChange={e => setFields(f => ({ ...f, grundpreis_pro_nacht: clampNumberValue(formEnhancements, 'grundpreis_pro_nacht', e.target.value) }))}
         />
@@ -418,7 +418,7 @@ export function WohnungenDialog({ open, onClose, onSubmit, defaultValues, record
           inputMode="decimal"
           step="any"
           {...numberInputProps(formEnhancements, 'endreinigung_preis')}
-          placeholder="z. B. 35,00"
+          placeholder=""
           value={fields.endreinigung_preis !== undefined ? fields.endreinigung_preis : (computedValues['endreinigung_preis'] ?? '')}
           onChange={e => setFields(f => ({ ...f, endreinigung_preis: clampNumberValue(formEnhancements, 'endreinigung_preis', e.target.value) }))}
         />

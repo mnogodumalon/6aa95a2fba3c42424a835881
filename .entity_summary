@@ -61,10 +61,10 @@ createRecordUrl from the service. Note the lowercase `l` in the service path.
   ◈ status → choice (2 options, ChoiceGroup) · stockwerk → stock (show it, warn on overshoot)
   ⚙ getWohnungen() · getWohnungenEntry(id) · createWohnungenEntry(fields) · updateWohnungenEntry(id, fields) · deleteWohnungenEntry(id) · queryWohnungen({ filter, orderby, limit, offset, fields }) · countWohnungen(filter?)
 - Gäste (gaeste): vorname!^[string/text], nachname!^[string/text], email^[string/email] "E-Mail", telefon^[string/tel], strasse^[string/text], hausnummer[string/text], plz[string/text] "Postleitzahl", ort[string/text], land[string/text], notizen[string/textarea]
-  ≡ 6 records at build time
+  ≡ 7 records at build time
   ⚙ getGaeste() · getGaesteEntry(id) · createGaesteEntry(fields) · updateGaesteEntry(id, fields) · deleteGaesteEntry(id) · queryGaeste({ filter, orderby, limit, offset, fields }) · countGaeste(filter?)
 - Buchungen (buchungen): buchungsnummer!^[string/text], wohnung!^[applookup/select], gast!^[applookup/select], anreise!^[date/date], abreise!^[date/date], anzahl_personen![number], status![lookup/select: anfrage|bestaetigt|eingecheckt|ausgecheckt|storniert], gesamtpreis[number], anzahlung_erhalten[bool], notizen[string/textarea]
-  ≡ 8 records at build time
+  ≡ 9 records at build time
   ◈ anreise+abreise → range candidate — YOU decide in .intents-staging/occupancy.json whether it is a stay, which applookup is the booked resource, which status keys do not occupy (AvailabilityRangePicker, form.range; blocked = occupancyFor()) · status → choice (5 options, ChoiceGroup) · wohnung → record (wohnungen, EntitySelectStep) · gast → record (gaeste, EntitySelectStep)
   ⚙ getBuchungen() · getBuchungenEntry(id) · createBuchungenEntry(fields) · updateBuchungenEntry(id, fields) · deleteBuchungenEntry(id) · queryBuchungen({ filter, orderby, limit, offset, fields }) · countBuchungen(filter?)
   ✚ EnrichedBuchungen adds ONLY wohnungName, gastName — via enrichBuchungen(buchungen, { wohnungenMap, gaesteMap }), all maps required

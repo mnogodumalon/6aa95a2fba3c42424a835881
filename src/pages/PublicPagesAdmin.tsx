@@ -31,17 +31,23 @@ function originLabel(o: string): string {
 
 // Plain-language summary of what a page's link grants — the owner confirms
 // THIS, never the underlying policy. Built from the field/endpoint config.
-function capabilities(page: PublicPageSummary): { submit?: string; view?: string } {
-  const out: { submit?: string; view?: string } = {};
-  if (page.type === 'custom' && page.endpoints) {
-    const create = page.endpoints.find(e => e.op === 'create');
-    const list = page.endpoints.find(e => e.op === 'list');
-    if (create) out.submit = create.fields.map(f => f.label).join(', ');
-    if (list) out.view = list.scope_description || list.fields.map(f => f.label).join(', ');
+// EVERY endpoint, not the first of each kind: a live page created three
+// entities and read all order numbers, and the dialog named one entity's
+// fields plus "nobody can see existing data". The owner consents to what the
+// link grants — this list has to be complete.
+function capabilities(page: PublicPageSummary): { submit: string[]; view: string[] } {
+  const submit: string[] = [];
+  const view: string[] = [];
+  if (page.type === 'custom' && page.endpoints && page.endpoints.length > 0) {
+    for (const e of page.endpoints) {
+      const labels = e.fields.map(f => f.label).join(', ');
+      if (e.op === 'create') submit.push(labels);
+      else if (e.op === 'list') view.push(e.scope_description ? `${e.scope_description} — ${labels}` : labels);
+    }
   } else {
-    out.submit = page.fields.map(f => f.label).join(', ');
+    submit.push(page.fields.map(f => f.label).join(', '));
   }
-  return out;
+  return { submit, view };
 }
 
 export default function PublicPagesAdmin() {
@@ -179,7 +185,7 @@ export default function PublicPagesAdmin() {
 
   const entries = Object.values(pages).sort((a, b) => a.title.localeCompare(b.title));
   const confirmPage = confirmSlug ? pages[confirmSlug] : null;
-  const caps = confirmPage ? capabilities(confirmPage) : {};
+  const caps = confirmPage ? capabilities(confirmPage) : { submit: [] as string[], view: [] as string[] };
 
   return (
     <PageShell
@@ -346,13 +352,13 @@ export default function PublicPagesAdmin() {
             <DialogDescription>{confirmPage?.title}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-sm">
-            {caps.submit ? (
-              <p><span className="font-medium">{t('ppa_can_do')}</span> {t('ppa_can_submit')} <span className="text-muted-foreground">({caps.submit})</span></p>
-            ) : null}
-            {caps.view ? (
-              <p><span className="font-medium">{t('ppa_can_do')}</span> {t('ppa_can_view')} <span className="text-muted-foreground">({caps.view})</span></p>
-            ) : null}
-            <p><span className="font-medium">{t('ppa_cannot_do')}</span> {t('ppa_cannot_line')}</p>
+            {caps.submit.map((line, i) => (
+              <p key={`s${i}`}><span className="font-medium">{t('ppa_can_do')}</span> {t('ppa_can_submit')} <span className="text-muted-foreground">({line})</span></p>
+            ))}
+            {caps.view.map((line, i) => (
+              <p key={`v${i}`}><span className="font-medium">{t('ppa_can_do')}</span> {t('ppa_can_view')} <span className="text-muted-foreground">({line})</span></p>
+            ))}
+            <p><span className="font-medium">{t('ppa_cannot_do')}</span> {caps.view.length > 0 ? t('ppa_cannot_change_line') : t('ppa_cannot_line')}</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmSlug(null)}>{t('ppa_cancel')}</Button>

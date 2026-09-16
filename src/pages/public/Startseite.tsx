@@ -58,12 +58,12 @@ function parseWohnung(r: PublicRecordResult): Wohnung {
 
 function WohnungCard({ w }: { w: Wohnung }) {
   const AUSSTATTUNG_LABELS: Record<string, string> = {
-  seeblick: 'Seeblick',
-  kueche: 'Küche',
-  wlan: 'WLAN',
-  parkplatz: 'Parkplatz',
-  haustiere_erlaubt: 'Haustiere erlaubt',
-  balkon: 'Balkon',
+  seeblick: tx('Seeblick'),
+  kueche: tx('Küche'),
+  wlan: tx('WLAN'),
+  parkplatz: tx('Parkplatz'),
+  haustiere_erlaubt: tx('Haustiere erlaubt'),
+  balkon: tx('Balkon'),
 };
 
   return (

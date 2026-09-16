@@ -40,7 +40,9 @@ export interface SelectItemLike { id: string; title: string; }
 /** What `toItem` may ask about the record beyond its own fields. */
 export interface RefContext {
   /** Display name(s) of the record(s) an applookup/multipleapplookup field points at
-   *  (`displayNameOf` of the target entity), joined with ', '; undefined until loaded or when empty. */
+   *  (`displayNameOf` of the target entity), joined with ', '; undefined until loaded or when empty.
+   *  Ask the search the record CAME FROM (`buchungen.refLabel(b, 'gast')`), not the target's:
+   *  the target's search only answers when it has the pointed-at record loaded itself. */
   ref(key: string): string | undefined;
 }
 
@@ -145,12 +147,27 @@ export function useRecordSearch<E extends EntityKey, T extends SelectItemLike>(
   const refNames = useRef(new Map<string, string>());
   const refAsked = useRef(new Set<string>());
   const rowsRef = useRef<JourneyRecord[]>([]);
+  // A name this search knows for an id: the referenced records its own rows
+  // point at (`refNames`, loaded by loadRefs) — or one of its OWN records.
+  // The second source heals the wrong-search call a live page made:
+  // `abteilungen.refLabel(mitglied, 'abteilung')` asked the TARGET's search,
+  // whose refNames know nothing of `abteilung`; the id, though, is one of its
+  // own rows, and `displayNameOf` is exactly what loadRefs would have stored.
+  // Ids are platform-unique, so a foreign record can never match. Complete
+  // only when this search loaded everything (small entity / no search fields);
+  // the source search's refLabel stays the right call.
   const refLabel = useCallback((record: JourneyRecord, key: string): string | undefined => {
+    const nameOf = (id: string): string | undefined => {
+      const known = refNames.current.get(id);
+      if (known) return known;
+      const own = records.current.get(id);
+      return own ? displayNameOf(entity, own.fields) || undefined : undefined;
+    };
     const rawValue = record.fields[key];
     const values = Array.isArray(rawValue) ? rawValue : [rawValue];
-    const names = values.map(v => recordIdOf(v)).map(id => (id ? refNames.current.get(id) : undefined)).filter((n): n is string => Boolean(n));
+    const names = values.map(v => recordIdOf(v)).map(id => (id ? nameOf(id) : undefined)).filter((n): n is string => Boolean(n));
     return names.length > 0 ? names.join(', ') : undefined;
-  }, []);
+  }, [entity]);
   // Safety net: should the server reject the standing `filter`, the hook loads
   // the entity unfiltered and lets `where` (the TypeScript twin) restrict it —
   // slower, but a correct list instead of an empty picker. Reported once.
