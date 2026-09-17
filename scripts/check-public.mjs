@@ -462,6 +462,38 @@ function checkEndpoint(slug, ep, pageSrc, pageFile, where = SURFACE) {
       }
     }
   }
+  // 3x. The same rule for the OTHER doors a value can take into a record:
+  //     plan `values`, `form.set('key', …)`. A create field the visitor never
+  //     enters and the owner never asked for, filled by the page itself, is a
+  //     value nobody ordered (live: `annahmedatum: todayIso()` in a plan step,
+  //     `gesamtpreis` = nights × price computed in the browser). Picks count
+  //     as visitor input (`onSelect={id => f.set('wohnung', id, …)}`), plan
+  //     `link`s are the layer's job, presets/defaults are judged by 3q.
+  if (ep.op === 'create' && appMeta && pageSrc) {
+    const controls = appMeta.apps?.[ep.entity]?.controls || {};
+    const lc = (x) => String(x ?? '').toLowerCase().trim();
+    const esc = (k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const MONEY = /(preis|betrag|summe|kosten|total|amount|price|gebuehr|gebühr|rabatt|steuer)/i;
+    for (const key of ep.fields || []) {
+      const k = esc(key);
+      const bound = new RegExp(`name=["']${k}["']|\\.(?:field|number|date|choice|checkbox|record|records)\\(\\s*['"]${k}['"]|\\.range\\(\\s*['"]${k}['"]|\\.range\\(\\s*['"]\\w+['"]\\s*,\\s*['"]${k}['"]|onSelect=\\{[^}]*set\\(\\s*['"]${k}['"]|set\\(\\s*['"]${k}['"]\\s*,\\s*(?:id|item|selected|picked|choice|record|\\w*Id)\\b`).test(pageSrc);
+      const linked = new RegExp(`link\\s*:\\s*\\{[^}]*\\b${k}\\s*:`).test(pageSrc);
+      const preset = key in (ep.preset_fields || {}) || key in (ep.default_fields || {});
+      const filledByPage = new RegExp(`\\bvalues\\s*:[^;]*?\\b${k}\\s*:|set\\(\\s*['"]${k}['"]\\s*,`).test(pageSrc);
+      if (bound || linked || preset) continue;
+      const c = controls[key] || {};
+      const computedMoney = MONEY.test(key) && new RegExp(`set\\(\\s*['"]${k}['"]\\s*,\\s*[^)]*[*+]|\\b${k}\\s*:\\s*[^,}]*[*+]|const\\s+${k}\\s*=\\s*[^;]*[*+]`).test(pageSrc);
+      if (computedMoney) {
+        errors.push(`${pageFile || where}: page '${slug}' computes the amount '${key}' in the browser and writes it into '${ep.entity}' — a visitor's browser never sets a price (it can be edited before submit, and it drifts from the owner's rules). Drop '${key}' from the create endpoint; a tool prices the record after it exists, the page may only DISPLAY an estimate`);
+        continue;
+      }
+      if (!filledByPage) continue;
+      if (!pageRequest) continue;
+      const words = [key, c.label].map(lc).filter(w => w.length >= 3);
+      if (words.some(w => pageRequest.includes(w))) continue;
+      errors.push(`${pageFile || where}: page '${slug}' fills '${ep.entity}.${key}' itself (plan values / form.set) although no visitor enters it and the owner never asked for '${c.label || key}' — a value nobody ordered lands in every record. Drop '${key}' from the create endpoint and from the page; if the record cannot do without it, ask the visitor for it`);
+    }
+  }
   // A list endpoint without an explicit projection is rejected by the
   // service — and an implicit "all fields" would be a data leak anyway.
   // applookup fields ARE allowed (raw record URL, join client-side);
