@@ -25,67 +25,6 @@
           "max_records": 100
         }
       ]
-    },
-    {
-      "slug": "buchungsanfrage",
-      "component": "Buchungsanfrage",
-      "title": "Ferienwohnung anfragen",
-      "endpoints": [
-        {
-          "entity": "wohnungen",
-          "op": "list",
-          "fields": [
-            "name",
-            "schlafplaetze",
-            "grundpreis_pro_nacht",
-            "endreinigung_preis",
-            "ausstattung",
-            "foto",
-            "status"
-          ],
-          "scope": "r.v_status == 'verfuegbar'",
-          "scope_description": "zeigt nur Wohnungen mit Status verfügbar",
-          "max_records": 50
-        },
-        {
-          "entity": "buchungen",
-          "op": "list",
-          "fields": [
-            "wohnung",
-            "anreise",
-            "abreise",
-            "status"
-          ],
-          "scope": "r.v_status not in ['storniert']",
-          "scope_description": "zeigt belegte Buchungen (alle außer storniert) für die Belegungsanzeige",
-          "max_records": 500
-        },
-        {
-          "entity": "gaeste",
-          "op": "create",
-          "fields": [
-            "vorname",
-            "nachname",
-            "email",
-            "telefon"
-          ]
-        },
-        {
-          "entity": "buchungen",
-          "op": "create",
-          "fields": [
-            "wohnung",
-            "gast",
-            "anreise",
-            "abreise",
-            "anzahl_personen",
-            "gesamtpreis"
-          ],
-          "preset_fields": {
-            "status": "anfrage"
-          }
-        }
-      ]
     }
   ]
 }
