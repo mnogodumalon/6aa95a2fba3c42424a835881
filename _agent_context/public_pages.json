@@ -8,20 +8,6 @@
       "title": "Unsere Ferienwohnungen",
       "published": true,
       "fields": []
-    },
-    {
-      "slug": "buchungsanfrage",
-      "type": "custom",
-      "entity": "buchungen",
-      "title": "Buchungsanfrage",
-      "published": true,
-      "fields": [
-        "buchungsnummer",
-        "wohnung",
-        "anreise",
-        "abreise",
-        "anzahl_personen"
-      ]
     }
   ]
 }

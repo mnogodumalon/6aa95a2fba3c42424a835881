@@ -28,6 +28,11 @@ if (DSN) {
     // Neither the message nor `startViewTransition` exists in our own code —
     // do not go looking for it there.
     ignoreErrors: ['Transition was skipped'],
+    // browserSessionIntegration calls window.addEventListener during setupOnce
+    // via whenIdleOrHidden. In render-smoke (jsdom) globalThis.addEventListener
+    // is undefined, crashing every public page. Sessions are low-value for a
+    // single-page dashboard app; removing this integration is safe.
+    integrations: (defaults) => defaults.filter((i) => i.name !== 'BrowserSession'),
   });
   if (APPGROUP_ID) {
     Sentry.setTag('appgroup_id', APPGROUP_ID);
