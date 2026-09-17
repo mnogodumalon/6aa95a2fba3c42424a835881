@@ -1,0 +1,2 @@
+{"debug":"Calling MCP tool: build_public_pages","timestamp":"2026-09-17T11:09:49.508Z","sessionId":"2dc6fa14-d674-47fc-b110-a5d39e7b9fca","cwd":"/home/user/app"}
+{"debug":"Tool 'build_public_pages' completed successfully in 7ms","timestamp":"2026-09-17T11:09:49.516Z","sessionId":"2dc6fa14-d674-47fc-b110-a5d39e7b9fca","cwd":"/home/user/app"}

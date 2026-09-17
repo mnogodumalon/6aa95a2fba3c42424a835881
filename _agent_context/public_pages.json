@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "pages": [
+    {
+      "slug": "startseite",
+      "type": "custom",
+      "entity": "wohnungen",
+      "title": "Unsere Ferienwohnungen",
+      "published": true,
+      "fields": []
+    },
+    {
+      "slug": "buchungsanfrage",
+      "type": "custom",
+      "entity": "buchungen",
+      "title": "Buchungsanfrage",
+      "published": true,
+      "fields": [
+        "buchungsnummer",
+        "wohnung",
+        "gast",
+        "anreise",
+        "abreise",
+        "anzahl_personen"
+      ]
+    }
+  ]
+}
