@@ -57,6 +57,15 @@ try {
 } catch {
   // metadata missing (e.g. local runs) — type checks are skipped
 }
+// The owner's words for this page job (.page_request, written by the page
+// job, removed by the deploy). Lets 3q judge a lookup preset against what
+// the owner asked for; absent in local runs → that part is skipped.
+let pageRequest = null;
+try {
+  pageRequest = readFileSync('.page_request', 'utf8').toLowerCase();
+} catch {
+  // no request on disk
+}
 
 // ── 1. Import allowlist over agent-written pages ─────────────────────────
 const IMPORT_RE = /^\s*import\s[^;]*?from\s+['"]([^'"]+)['"]/gm;
@@ -390,6 +399,24 @@ function checkEndpoint(slug, ep, pageSrc, pageFile, where = SURFACE) {
         if (!options || typeof val !== 'string') continue;
         if (!options.includes(val)) {
           errors.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${val}', which is not an option of that field — valid keys: ${options.join(', ')}. Take the option the owner named (match its label); if none matches, leave the preset OUT and say so in your summary — never the first option`);
+          continue;
+        }
+        // The value is an option — but is it the one the owner asked for? When
+        // the request names the FIELD ("Status …") and none of the field's
+        // options (key or label) occurs in it, the owner wants a value the
+        // field does not have: three live pages then took the first option
+        // (`angenommen`, `geplant`, `aktiv`) instead of leaving it out.
+        if (pageRequest) {
+          const lc = (x) => String(x ?? '').toLowerCase().trim();
+          const fieldWords = [key, c.label].map(lc).filter(w => w.length >= 3);
+          const optionWords = Object.entries(c.lookup_data).flatMap(([k, l]) => [lc(k), lc(l)]).filter(w => w.length >= 3);
+          const mentionsField = fieldWords.some(w => pageRequest.includes(w));
+          const mentionsOption = optionWords.some(w => pageRequest.includes(w));
+          if (mentionsField && !mentionsOption) {
+            errors.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${val}', but the owner's request names '${c.label || key}' with a value this field does not offer (options: ${options.join(', ')}). Do not substitute: leave '${key}' out of ${bag} and say in your summary that the requested value does not exist`);
+          } else if (!mentionsField && !mentionsOption) {
+            warnings.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${val}' without the owner asking for it — fine as a default, but name it in your summary so the owner can object`);
+          }
         }
       }
     }
@@ -585,9 +612,14 @@ for (const [slug, page] of surfacePages) {
     if (readsParam && src && !src.includes(String(lp.name || '\u0000'))) {
       errors.push(`${SURFACE}: page '${slug}' declares link_param '${lp.name}' but ${page.component}.tsx never reads that name — the generated links would carry a parameter the page ignores`);
     }
-    const listed = (page.endpoints || []).some(e => e.op === 'list' && e.entity === lp.entity);
-    if (!listed) {
+    const lpList = (page.endpoints || []).find(e => e.op === 'list' && e.entity === lp.entity);
+    if (!lpList) {
       errors.push(`${SURFACE}: page '${slug}' link_param entity '${lp.entity}' has no list endpoint on this page — the page could not read the linked record`);
+    } else if (!lpList.scope) {
+      // The grant has no per-record path: the page reads the WHOLE list to find
+      // the linked record, so every record is readable for anyone with the bare
+      // URL (live: all order numbers, statuses and plates of a workshop).
+      warnings.push(`${SURFACE}: page '${slug}' link_param entity '${lp.entity}' is listed without a scope — anyone with the page URL can read every '${lp.entity}' record through the grant, not only the linked one. Narrow the list with a scope where the data allows it, and name the exposure in your summary`);
     }
   }
   {

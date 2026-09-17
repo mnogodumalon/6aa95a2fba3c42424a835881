@@ -648,11 +648,22 @@ export const DISPLAY_FIELDS: Record<EntityKey, string[]> = {
 
 /** The display name of a record: its display fields joined, else the first
  *  non-empty text value, else ''. */
+/** A display-field value as text: strings as they are, a lookup `{ key, label }`
+ *  (either door hydrates lookups to objects) by its label — an entity whose
+ *  only title-like field is a lookup/select otherwise had no name at all. */
+function displayPart(v: unknown): string {
+  if (typeof v === 'string') return v.trim();
+  if (v && typeof v === 'object' && 'label' in v) {
+    const l = (v as { label?: unknown }).label;
+    return l === null || l === undefined ? '' : String(l).trim();
+  }
+  return '';
+}
+
 export function displayNameOf(entity: EntityKey, fields: Record<string, unknown>): string {
   const parts = (DISPLAY_FIELDS[entity] ?? [])
-    .map(k => fields[k])
-    .filter((v): v is string => typeof v === 'string' && v.trim() !== '')
-    .map(v => v.trim());
+    .map(k => displayPart(fields[k]))
+    .filter(v => v !== '');
   if (parts.length > 0) return parts.join(' ');
   for (const [k, rule] of Object.entries(FIELD_RULES[entity] ?? {})) {
     if (rule.kind !== 'text' && rule.kind !== 'email') continue;

@@ -352,6 +352,9 @@ export default function PublicPagesAdmin() {
             <DialogDescription>{confirmPage?.title}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-sm">
+            {confirmPage?.link_param ? (
+              <p className="rounded-md bg-muted px-3 py-2 text-muted-foreground">{t('ppa_link_param_note')}</p>
+            ) : null}
             {caps.submit.map((line, i) => (
               <p key={`s${i}`}><span className="font-medium">{t('ppa_can_do')}</span> {t('ppa_can_submit')} <span className="text-muted-foreground">({line})</span></p>
             ))}
