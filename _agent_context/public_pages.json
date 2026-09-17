@@ -8,20 +8,6 @@
       "title": "Ferienwohnungen",
       "published": true,
       "fields": []
-    },
-    {
-      "slug": "buchungsanfrage",
-      "type": "custom",
-      "entity": "buchungen",
-      "title": "Buchungsanfrage — Ferienwohnung am Chiemsee",
-      "published": true,
-      "fields": [
-        "wohnung",
-        "gast",
-        "anreise",
-        "abreise",
-        "anzahl_personen"
-      ]
     }
   ]
 }
