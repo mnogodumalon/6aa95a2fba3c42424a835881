@@ -1345,7 +1345,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
           "nachname": "Last Name",
           "rolle": "Role",
           "telefon": "Phone",
-          "email": "Email",
+          "email": "E-Mail",
           "status": "Status"
         },
         "lookups": {
@@ -1378,7 +1378,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
           "ausstattung": {
             "seeblick": "Lake View",
             "kueche": "Kitchen",
-            "wlan": "WiFi",
+            "wlan": "WLAN",
             "parkplatz": "Parking",
             "haustiere_erlaubt": "Pets Allowed",
             "balkon": "Balcony"
@@ -1395,7 +1395,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
         "fields": {
           "vorname": "First Name",
           "nachname": "Last Name",
-          "email": "Email",
+          "email": "E-Mail",
           "telefon": "Phone",
           "strasse": "Street",
           "hausnummer": "House Number",
@@ -1413,8 +1413,8 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
           "buchungsnummer": "Booking Number",
           "wohnung": "Apartment",
           "gast": "Guest",
-          "anreise": "Check-in",
-          "abreise": "Check-out",
+          "anreise": "Check-In",
+          "abreise": "Check-Out",
           "anzahl_personen": "Number of Guests",
           "status": "Status",
           "gesamtpreis": "Total Price (€)",

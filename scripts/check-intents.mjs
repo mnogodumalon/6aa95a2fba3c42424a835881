@@ -158,6 +158,20 @@ if (pages.length > 0) {
       errors.push(`${file}:${line}: defaultValue on an input — initial values belong to the form: useStepForm(entity, { initial: { key: value } }) (dates: todayIso() from '@/lib/journey'); an uncontrolled default is never submitted and fails validation`);
     }
 
+    // 3u. A hand-rolled stepper. A page that keeps its own step state and moves
+    //     between steps with its own buttons passes tsc and every gate here, but
+    //     nothing the layer provides works for it: no URL step, no draft resume,
+    //     no "needs" back-link, no focus management — and the render-smoke has
+    //     no "Weiter" to press, so the walk stops at step 1 (live: a five-step
+    //     membership form rebuilt the stepper in 480 lines). The shell IS the
+    //     stepper: IntentWizardShell + StepNav, the page only owns `step`.
+    {
+      const ownsSteps = /\bsetStep\s*\(|\[\s*step\s*,\s*setStep\s*\]|useState\(\s*STEP_/.test(src);
+      const onTheLayer = /<SummaryStep\b|useJourneySubmit\(/.test(src);
+      if (ownsSteps && onTheLayer && !/IntentWizardShell/.test(src)) {
+        errors.push(`${file}: a hand-rolled stepper (own step state and buttons) without IntentWizardShell — wrap the steps in <IntentWizardShell steps={STEPS} currentStep={step} onStepChange={setStep} forms={[…]}> and move between them with <StepNav onNext={…} /> (both under @/components/blocks); the shell owns URL step, draft resume, focus and the buttons the render-smoke presses`);
+      }
+    }
     // 3h. Every bound control sits under a label. The bindings carry id, value,
     //     aria-* — not the label; a step with five bare inputs shipped (live).
     //     <Field form={f} name="key"> renders label, hint and error from the

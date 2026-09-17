@@ -119,6 +119,21 @@ for (const file of pageFiles) {
     errors.push(`${file}:${line}: defaultValue on an input — initial values belong to the form: useStepForm(entity, { initial: { key: value } }) (dates: todayIso() from '@/lib/journey'); an uncontrolled default is never submitted and fails validation`);
   }
 
+  // 3u. A hand-rolled stepper. A page that keeps its own step state and moves
+  //     between steps with its own buttons passes tsc and every gate here, but
+  //     nothing the layer provides works for it: no URL step, no draft resume,
+  //     no "needs" back-link, no focus management — and the render-smoke has
+  //     no "Weiter" to press, so the walk stops at step 1 (live: a five-step
+  //     membership form rebuilt the stepper in 480 lines). The shell IS the
+  //     stepper: IntentWizardShell + StepNav, the page only owns `step`.
+  {
+    const ownsSteps = /\bsetStep\s*\(|\[\s*step\s*,\s*setStep\s*\]|useState\(\s*STEP_/.test(src);
+    const onTheLayer = /<SummaryStep\b|useJourneySubmit\(/.test(src);
+    if (ownsSteps && onTheLayer && !/IntentWizardShell/.test(src)) {
+      errors.push(`${file}: a hand-rolled stepper (own step state and buttons) without IntentWizardShell — wrap the steps in <IntentWizardShell steps={STEPS} currentStep={step} onStepChange={setStep} forms={[…]}> and move between them with <StepNav onNext={…} /> (both under @/components/blocks); the shell owns URL step, draft resume, focus and the buttons the render-smoke presses`);
+    }
+  }
+
   // 3h. Every bound control sits under a label. The bindings carry id, value,
   //     aria-* — not the label; a step with five bare inputs shipped (live).
   //     <Bound form={f} name="key"> IS a labelled control; <Field form={f}
@@ -399,38 +414,51 @@ function checkEndpoint(slug, ep, pageSrc, pageFile, where = SURFACE) {
       errors.push(`${where}: page '${slug}' endpoint '${ep.entity}' scope uses 'today' — vSQL has no today, the current time is now()`);
     }
   }
-  // 3q. A preset/default VALUE for a lookup field must be one of the field's
-  //     options — and the one the owner asked for. Three live pages turned
-  //     public requests into `angenommen`, `geplant` and `aktiv` because the
-  //     agent took the first option instead of the owner's word.
+  // 3q. A preset/default VALUE must be one the OWNER asked for. A lookup
+  //     value must be one of the field's options, and the option the owner
+  //     named; any preset the request never mentions is a value nobody
+  //     ordered, written into every record the page creates (live: status
+  //     'angenommen', kundentyp 'privat', mitgliedsnummer 'AUSSTEHEND',
+  //     eintrittsdatum '__today__' — three of them against the owner's words).
   if (ep.op === 'create' && appMeta) {
     const controls = appMeta.apps?.[ep.entity]?.controls || {};
+    const lc = (x) => String(x ?? '').toLowerCase().trim();
     for (const [bag, obj] of [['preset_fields', ep.preset_fields], ['default_fields', ep.default_fields]]) {
       for (const [key, val] of Object.entries(obj || {})) {
         const c = controls[key];
-        const options = c?.lookup_data && typeof c.lookup_data === 'object' ? Object.keys(c.lookup_data) : null;
-        if (!options || typeof val !== 'string') continue;
-        if (!options.includes(val)) {
+        if (!c) continue;
+        const options = c.lookup_data && typeof c.lookup_data === 'object' ? Object.keys(c.lookup_data) : null;
+        if (options && typeof val === 'string' && !options.includes(val)) {
           errors.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${val}', which is not an option of that field — valid keys: ${options.join(', ')}. Take the option the owner named (match its label); if none matches, leave the preset OUT and say so in your summary — never the first option`);
           continue;
         }
-        // The value is an option — but is it the one the owner asked for? When
-        // the request names the FIELD ("Status …") and none of the field's
-        // options (key or label) occurs in it, the owner wants a value the
-        // field does not have: three live pages then took the first option
-        // (`angenommen`, `geplant`, `aktiv`) instead of leaving it out.
-        if (pageRequest) {
-          const lc = (x) => String(x ?? '').toLowerCase().trim();
-          const fieldWords = [key, c.label].map(lc).filter(w => w.length >= 3);
-          const optionWords = Object.entries(c.lookup_data).flatMap(([k, l]) => [lc(k), lc(l)]).filter(w => w.length >= 3);
-          const mentionsField = fieldWords.some(w => pageRequest.includes(w));
-          const mentionsOption = optionWords.some(w => pageRequest.includes(w));
-          if (mentionsField && !mentionsOption) {
-            errors.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${val}', but the owner's request names '${c.label || key}' with a value this field does not offer (options: ${options.join(', ')}). Do not substitute: leave '${key}' out of ${bag} and say in your summary that the requested value does not exist`);
-          } else if (!mentionsField && !mentionsOption) {
-            warnings.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${val}' without the owner asking for it — fine as a default, but name it in your summary so the owner can object`);
-          }
+        if (!pageRequest) continue;  // no owner text to judge against (initial build)
+        const fieldWords = [key, c.label].map(lc).filter(w => w.length >= 3);
+        const optionWords = options ? Object.entries(c.lookup_data).flatMap(([k, l]) => [lc(k), lc(l)]).filter(w => w.length >= 3) : [];
+        const mentionsField = fieldWords.some(w => pageRequest.includes(w));
+        const mentionsOption = optionWords.some(w => pageRequest.includes(w));
+        if (options && mentionsField && !mentionsOption) {
+          errors.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${val}', but the owner's request names '${c.label || key}' with a value this field does not offer (options: ${options.join(', ')}). Do not substitute: leave '${key}' out of ${bag} and say in your summary that the requested value does not exist`);
+        } else if (!mentionsField && !mentionsOption) {
+          errors.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${JSON.stringify(val)}' although the owner never asked for '${c.label || key}' — a value nobody ordered lands in every record this page writes. Leave '${key}' out of ${bag}; if the record cannot do without it, ask the visitor (a field on the page) and name the choice in your summary`);
         }
+      }
+    }
+  }
+  // 3w. Identifiers are never assigned by a public page. A visitor-facing
+  //     page that computes an order or booking number (`AU-${date}-${rand}`,
+  //     generateNummer()), presets a placeholder ('AUSSTEHEND') or lets the
+  //     visitor type the number produces duplicates and editable ids (live:
+  //     three pages, one of them `ANF-<day>` for every request of a day).
+  //     Numbers come from the platform or a tool after the record exists.
+  if (ep.op === 'create') {
+    const ID_KEY = /(nummer|number|_nr)$/i;
+    const NOT_ID = /(telefon|phone|mobil|handy|fax|haus|steuer|ust|iban|bic|konto|sozial|versicher|rente|pass|ausweis|zimmer|raum|platz|tisch|seiten|artikel|teile|serien|fahrgestell|chassis|vin)/i;
+    const bags = [['fields', ep.fields || []], ['preset_fields', Object.keys(ep.preset_fields || {})], ['default_fields', Object.keys(ep.default_fields || {})]];
+    for (const [bag, keys] of bags) {
+      for (const key of keys) {
+        if (!ID_KEY.test(key) || NOT_ID.test(key)) continue;
+        errors.push(`${where}: page '${slug}' endpoint '${ep.entity}' puts the identifier '${key}' into ${bag} — a public page never assigns numbers: computed in the browser they collide (one live page wrote the same number for every request of a day), preset they are placeholders, typed by the visitor they are editable. Drop '${key}' from the page; the platform or a tool numbers the record after it exists, and the success page shows the reference the layer generates`);
       }
     }
   }
