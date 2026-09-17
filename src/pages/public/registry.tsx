@@ -14,7 +14,6 @@ import { lazy } from 'react';
 // component. (Example kept prose-only so it is not read as a real import.)
 export const PUBLIC_PAGES: Record<string, LazyExoticComponent<ComponentType>> = {
   // <public:pages>
-  'buchungsanfrage': lazy(() => import('@/pages/public/Buchungsanfrage')),
   'startseite': lazy(() => import('@/pages/public/Startseite')),
   // </public:pages>
 };
