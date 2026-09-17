@@ -1,4 +1,65 @@
 {
   "version": 1,
-  "pages": []
+  "pages": [
+    {
+      "slug": "buchungsanfrage",
+      "component": "Buchungsanfrage",
+      "title": "Buchungsanfrage",
+      "endpoints": [
+        {
+          "entity": "wohnungen",
+          "op": "list",
+          "fields": [
+            "name",
+            "schlafplaetze",
+            "grundpreis_pro_nacht",
+            "endreinigung_preis",
+            "foto",
+            "status"
+          ],
+          "scope": "r.v_status == 'verfuegbar'",
+          "scope_description": "Zeigt nur Wohnungen mit Status 'verfuegbar'",
+          "max_records": 50
+        },
+        {
+          "entity": "buchungen",
+          "op": "list",
+          "fields": [
+            "wohnung",
+            "anreise",
+            "abreise",
+            "status"
+          ],
+          "scope": "r.v_status not in ['storniert']",
+          "scope_description": "Zeigt nur aktive Buchungen (nicht storniert) zur Belegungsanzeige",
+          "max_records": 500
+        },
+        {
+          "entity": "gaeste",
+          "op": "create",
+          "fields": [
+            "vorname",
+            "nachname",
+            "email",
+            "telefon"
+          ]
+        },
+        {
+          "entity": "buchungen",
+          "op": "create",
+          "fields": [
+            "buchungsnummer",
+            "wohnung",
+            "gast",
+            "anreise",
+            "abreise",
+            "anzahl_personen"
+          ],
+          "preset_fields": {
+            "status": "anfrage"
+          }
+        }
+      ]
+    }
+  ]
 }

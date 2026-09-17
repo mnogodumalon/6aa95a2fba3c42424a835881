@@ -1,13 +1,4 @@
 {
   "version": 1,
-  "pages": [
-    {
-      "slug": "startseite",
-      "type": "custom",
-      "entity": "wohnungen",
-      "title": "Ferienwohnungen",
-      "published": true,
-      "fields": []
-    }
-  ]
+  "pages": []
 }
