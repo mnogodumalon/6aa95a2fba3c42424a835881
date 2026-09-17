@@ -189,7 +189,7 @@ function BuchungsanfrageInner({
                 kueche: 'Küche',
                 wlan: 'WLAN',
                 parkplatz: 'Parkplatz',
-                haustiere_erlaubt: 'Haustiere erlaubt',
+                haustiere_erlaubt: tx('Haustiere erlaubt'),
                 balkon: 'Balkon',
               };
               const isSelected = selectedWohnungId === r.id;

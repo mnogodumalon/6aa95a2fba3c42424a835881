@@ -462,10 +462,20 @@ function checkEndpoint(slug, ep, pageSrc, pageFile, where = SURFACE) {
         // `continue`, never `return`: a `return` here left checkEndpoint at the
         // first optional field and skipped the stay-resource rule below (live:
         // a booking page without its room passed the gate).
-        if (!controls[key]?.required || key in preset) continue;
-        const referenced = new RegExp(`(['"\`]${key}['"\`])|(\\b${key}\\s*:)`).test(pageSrc);
-        if (!referenced) {
-          errors.push(`${pageFile}: required field '${key}' of '${ep.entity}' is declared in ${where} but the page never submits it — either add an input for it (createPublicRecord must include '${key}') or drop '${key}' out of the endpoint's field projection so the team fills it internally`);
+        if (!controls[key]?.required || key in preset || key in (ep.default_fields || {})) continue;
+        // The key must be PROVIDED for this entity, not merely mentioned: a
+        // live page listed `status` in the create fields, never set it, and
+        // read `r.fields['status']` in another entity's where-filter — the old
+        // "is the word in the source" test passed, every submit got 400
+        // missing_fields: ["status"]. Provided means: in this entity's
+        // useStepForm fields, set on that form, or in a plan step's values.
+        const formBlocks = [...pageSrc.matchAll(new RegExp(`useStepForm\\(\\s*['"]${ep.entity}['"]\\s*,\\s*\\{([\\s\\S]*?)\\}\\s*\\)`, 'g'))].map(m => m[1]);
+        const inFormFields = formBlocks.some(b => new RegExp(`\\bfields\\s*:\\s*\\[[^\\]]*['"]${key}['"]`).test(b));
+        const setOnForm = new RegExp(`\\.set\\(\\s*['"]${key}['"]`).test(pageSrc);
+        const inValues = new RegExp(`\\bvalues\\s*:[\\s\\S]{0,600}?\\b${key}\\s*:`).test(pageSrc);
+        const inCreateCall = new RegExp(`createPublicRecord\\([\\s\\S]{0,400}?\\b${key}\\s*:`).test(pageSrc);
+        if (!inFormFields && !setOnForm && !inValues && !inCreateCall) {
+          errors.push(`${pageFile}: required field '${key}' of '${ep.entity}' is declared in ${where} but the page never provides it (not in useStepForm('${ep.entity}', { fields: [...] }), not set(), not in a plan step's values) — every submit fails with 400 missing_fields. Either bind an input for '${key}' or drop it from the endpoint's fields so the team fills it internally; a fixed value belongs in preset_fields`);
         }
       }
     }
