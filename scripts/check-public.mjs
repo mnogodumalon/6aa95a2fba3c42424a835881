@@ -611,6 +611,28 @@ for (const [slug, page] of surfacePages) {
     ? readFileSync(join(PAGES_DIR, `${page.component}.tsx`), 'utf8')
     : '';
   const readsParam = /useSearchParams|searchParams|URLSearchParams/.test(src);
+  // 3r. A read of a field the list projection does not include is always
+  //     empty for visitors — the grant never delivers it. Live: "Ändern"
+  //     added Beschreibung and Ausstattung to the cards in code only, the
+  //     surface stayed as it was, the page stayed published and showed
+  //     nothing. Only keys that belong to a LISTED entity and to no declared
+  //     endpoint field (create or list) are judged — a form field of another
+  //     entity with the same name is left alone.
+  if (appMeta && src) {
+    const declared = new Set();
+    for (const e of page.endpoints || []) for (const k of (e.fields || [])) declared.add(k);
+    const reads = new Set();
+    for (const m of src.matchAll(/\.fields(?:\.(\w+)|\[['"](\w+)['"]\])/g)) reads.add(m[1] || m[2]);
+    for (const m of src.matchAll(/\bfield(?:Text|Lookup|Lookups|Number|Date|Ref)\(\s*[^,()]+,\s*['"](\w+)['"]/g)) reads.add(m[1]);
+    for (const ep of (page.endpoints || []).filter(e => e.op === 'list')) {
+      const controls = appMeta.apps?.[ep.entity]?.controls || {};
+      const projection = new Set(ep.fields || []);
+      for (const key of reads) {
+        if (projection.has(key) || declared.has(key) || !controls[key]) continue;
+        errors.push(`${SURFACE}: page '${slug}' reads '${key}' of '${ep.entity}' (${page.component}.tsx), but the list projection does not include it — the grant never delivers that field, visitors always see it empty. Add '${key}' to the list endpoint's fields (and mind what that exposes) or remove the read`);
+      }
+    }
+  }
   if (readsParam && !page.link_param) {
     errors.push(`${SURFACE}: page '${slug}' reads a query parameter but declares no "link_param" — without it the owner only gets the bare page URL, which shows "link incomplete". Add link_param: { name, entity, label_field } (entity needs a list endpoint on this page).`);
   }
