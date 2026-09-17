@@ -125,7 +125,13 @@ export function SuccessStep({
     label: restartLabel ?? t('sx_restart'),
     onClick: () => { submit.reset(); forms.forEach(f => f.reset()); wizard?.goTo(1); },
   }] : [];
+  // One button per label: a page that passes the same wording as `restartLabel`
+  // AND as a `next` action (live: "Weitere Anfrage stellen" twice) gets one.
+  const seenLabels = new Set<string>();
   const followUps = [...restart, ...next].flatMap((action): SuccessAction[] => {
+    const key = action.label.trim().toLowerCase();
+    if (seenLabels.has(key)) return [];
+    seenLabels.add(key);
     if (!action.href) return [action];
     const href = resolveFlowHref(action.href, flowPaths);
     if (href === null) {

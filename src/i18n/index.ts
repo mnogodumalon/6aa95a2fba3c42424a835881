@@ -1335,7 +1335,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
     }
   },
   "en": {
-    "appgroup": "Vacation Rentals Seeblick",
+    "appgroup": "Ferienwohnungen Seeblick",
     "apps": {
       "mitarbeiter": {
         "name": "Employees",
@@ -1366,7 +1366,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
           "name": "Apartment Name",
           "beschreibung": "Description",
           "stockwerk": "Floor",
-          "schlafplaetze": "Sleeping Spots",
+          "schlafplaetze": "Sleeping Capacity",
           "quadratmeter": "Square Meters",
           "grundpreis_pro_nacht": "Base Price per Night (€)",
           "endreinigung_preis": "Final Cleaning (€)",
@@ -1378,7 +1378,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
           "ausstattung": {
             "seeblick": "Lake View",
             "kueche": "Kitchen",
-            "wlan": "Wi-Fi",
+            "wlan": "WiFi",
             "parkplatz": "Parking",
             "haustiere_erlaubt": "Pets Allowed",
             "balkon": "Balcony"
@@ -1423,7 +1423,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
         },
         "lookups": {
           "status": {
-            "anfrage": "Inquiry",
+            "anfrage": "Requested",
             "bestaetigt": "Confirmed",
             "eingecheckt": "Checked In",
             "ausgecheckt": "Checked Out",
@@ -1438,7 +1438,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
           "wohnung": "Apartment",
           "buchung": "Booking",
           "datum": "Cleaning Date",
-          "reinigungskraft": "Cleaner",
+          "reinigungskraft": "Cleaning Staff",
           "status": "Status",
           "bemerkungen": "Remarks"
         },

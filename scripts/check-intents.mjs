@@ -169,7 +169,17 @@ if (pages.length > 0) {
         const wrapped = new RegExp(`<(?:Field|Bound)\\b[^>]*\\bname=["']${key}["']`).test(src);
         const labelled = new RegExp(`htmlFor=\\{[^}]*fieldId\\(\\s*['"]${key}['"]`).test(src);
         if (!wrapped && !labelled) {
-          errors.push(`${file}: the control bound with f.…('${key}') has no label — wrap it: <Field form={f} name="${key}">…</Field> (label from the entity's rules, error and hint included; from '@/components/blocks/Field')`);
+          errors.push(`${file}: the control bound with f.…('${key}') has no label — use <Bound form={f} name="${key}" /> (label, control, hint and error in one; from '@/components/blocks/Bound') or wrap your own control: <Field form={f} name="${key}">…</Field>`);
+        }
+      }
+      // A <Field> whose only child is a <Bound> of the same key is redundant —
+      // the layer renders one label either way (Bound sees the enclosing Field).
+      for (const m of src.matchAll(/<Field\b([^>]*)>\s*<Bound\b([^>]*)\/>\s*<\/Field>/g)) {
+        const outer = (/\bname=["'](\w+)["']/.exec(m[1]) || [])[1];
+        const inner = (/\bname=["'](\w+)["']/.exec(m[2]) || [])[1];
+        if (outer && outer === inner) {
+          const line = src.slice(0, m.index).split('\n').length;
+          warnings.push(`${file}:${line}: <Field name="${outer}"> around <Bound name="${outer}"> — Bound already renders label, hint and error; drop the Field (keep its label= or hint= on the Bound)`);
         }
       }
     }

@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { DatePicker } from '@/components/DatePicker';
 import { ChoiceGroup } from '@/components/blocks/ChoiceGroup';
-import { Field } from '@/components/blocks/Field';
+import { Field, useEnclosingField } from '@/components/blocks/Field';
 import { labelOf, type FieldKind } from '@/lib/journey/rules';
 import type { StepForm } from '@/lib/journey/useStepForm';
 
@@ -28,6 +28,9 @@ import type { StepForm } from '@/lib/journey/useStepForm';
  * (EntitySelectStep + useRecordSearch) or an explicit
  * <Field><Combobox {...f.record(k)} items={…} /></Field> is the way — check-intents
  * rejects <Bound> on a record field.
+ *
+ * <Field name="x"><Bound name="x" /></Field> is harmless: Bound sees the
+ * enclosing Field (context) and renders only the control. One label, always.
  */
 export type BoundControl = 'input' | 'textarea' | 'date' | 'choice' | 'checkbox';
 
@@ -62,16 +65,23 @@ export function controlFor(kind: FieldKind | undefined): BoundControl {
 export function Bound({ form, name, label, hint, placeholder, rows = 3, allowClear, as, className }: BoundProps) {
   const rule = form.rules[name];
   const control = as ?? controlFor(rule?.kind);
+  // Inside <Field name={name}> the label, hint and error line are already
+  // there — render the bare control, never a second labelled wrapper.
+  const enclosed = useEnclosingField() === name;
 
   if (control === 'checkbox') {
     // The checkbox carries its own visible text; the Field label stays for screen readers.
     const cb = form.checkbox(name);
+    const box = (
+      <div className="flex items-center gap-2 pt-1">
+        <Checkbox {...cb} />
+        <Label htmlFor={cb.id} className="font-normal">{label ?? labelOf(form.entity, name)}</Label>
+      </div>
+    );
+    if (enclosed) return box;
     return (
       <Field form={form} name={name} label={label} hint={hint} hideLabel className={className}>
-        <div className="flex items-center gap-2 pt-1">
-          <Checkbox {...cb} />
-          <Label htmlFor={cb.id} className="font-normal">{label ?? labelOf(form.entity, name)}</Label>
-        </div>
+        {box}
       </Field>
     );
   }
@@ -90,6 +100,7 @@ export function Bound({ form, name, label, hint, placeholder, rows = 3, allowCle
     default:
       node = <Input {...(rule?.kind === 'number' ? form.number(name) : form.field(name))} placeholder={placeholder} />;
   }
+  if (enclosed) return node;
   return (
     <Field form={form} name={name} label={label} hint={hint} className={className}>
       {node}

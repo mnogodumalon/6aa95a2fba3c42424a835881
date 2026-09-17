@@ -51,13 +51,13 @@ export function PublicShell({ title, description, wide, fullBleed, plain, loadin
   let body: ReactNode;
   if (loading) {
     body = (
-      <div className="flex justify-center pt-16">
+      <div className="flex justify-center pt-16" data-public-loading="">
         <IconLoader2 size={28} stroke={1.5} className="animate-spin text-muted-foreground" />
       </div>
     );
   } else if (unavailable) {
     body = (
-      <div className="rounded-[27px] bg-card shadow-lg p-6 sm:p-8 text-center">
+      <div className="rounded-[27px] bg-card shadow-lg p-6 sm:p-8 text-center" data-public-unavailable="">
         <h1 className="text-xl font-medium mb-2">{t('pf_unavailable_title')}</h1>
         <p className="text-muted-foreground">{t('pps_unavailable_message')}</p>
       </div>

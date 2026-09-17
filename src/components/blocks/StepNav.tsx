@@ -111,7 +111,7 @@ export function StepNav({
   return (
     <div className={`flex flex-wrap items-center gap-3 border-t border-border pt-4 mt-6 ${className}`}>
       {showBack ? (
-        <Button type="button" variant="ghost" onClick={handleBack} className="gap-1.5">
+        <Button type="button" variant="ghost" onClick={handleBack} className="gap-1.5" data-journey-back="">
           <IconArrowLeft size={16} aria-hidden="true" />
           {backLabel ?? t('sn_back')}
         </Button>
@@ -123,7 +123,7 @@ export function StepNav({
         {message && <p role="alert" className="text-destructive">{message}</p>}
       </div>
       {!atEnd && (
-        <Button type="button" onClick={handleNext} disabled={nextDisabled || working} className="gap-1.5">
+        <Button type="button" onClick={handleNext} disabled={nextDisabled || working} className="gap-1.5" data-journey-next="">
           {working ? <IconLoader2 size={16} className="animate-spin" aria-hidden="true" /> : null}
           {label}
           {!working && <IconArrowRight size={16} aria-hidden="true" />}

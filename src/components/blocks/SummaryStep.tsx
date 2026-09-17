@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { IconAlertCircle, IconCheck, IconCircleDashed, IconLoader2, IconX } from '@tabler/icons-react';
 import { t } from '@/i18n';
 import { planProvidedKeys } from '@/lib/journey/port';
+import { EMPTY_VALUE } from '@/lib/journey/format';
 import { mergeSummaryRows } from '@/lib/journey/summary';
 import { entityLabel, isEmptyValue, labelOf } from '@/lib/journey/rules';
 import type { StepForm, SummaryItem } from '@/lib/journey/useStepForm';
@@ -64,9 +65,16 @@ export function SummaryStep({
   const suppressHeading = wizard?.suppressHeading;
   useEffect(() => suppressHeading?.(), [suppressHeading]);
 
+  // A required field the PLAN fills at submit (a `link` to an earlier step's
+  // record, a `values` entry) is nobody's answer: it would show as "Patient —"
+  // here (live) although nothing is missing. The success page already hides it.
+  const answered = (f: StepForm): SummaryItem[] => {
+    const provided = planProvidedKeys(submit.plan.find(s => s.form === f));
+    return f.summary().filter(r => !(r.value === EMPTY_VALUE && (r.keys ?? []).length > 0 && (r.keys ?? []).every(k => provided.has(k))));
+  };
   // Page `items` refine, never double: an item covering a form field's keys
   // (or its label in the same step) replaces that form row.
-  const rows: SummaryItem[] = mergeSummaryRows(forms.flatMap(f => f.summary()), items);
+  const rows: SummaryItem[] = mergeSummaryRows(forms.flatMap(answered), items);
   const groups = new Map<number | undefined, SummaryItem[]>();
   for (const row of rows) {
     const list = groups.get(row.step) ?? [];

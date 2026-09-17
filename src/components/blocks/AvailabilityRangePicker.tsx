@@ -144,7 +144,7 @@ export function AvailabilityRangePicker({
     // Two 7×40px months need ~610px; inside the public page's 640px card the
     // second month was clipped by the card's overflow (live: "one month").
     // Below @2xl (672px) one month renders and the arrows page through.
-    <div className="@container space-y-3">
+    <div className="@container space-y-3" data-journey-range="">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground" aria-live="polite">
           {value.from && value.to
@@ -240,6 +240,7 @@ export function AvailabilityRangePicker({
                       key={iso}
                       type="button"
                       disabled={past}
+                      data-day={iso}
                       aria-label={format(d, 'PPP', { locale })}
                       aria-pressed={isFrom || isTo}
                       className={`h-10 w-10 text-sm flex items-center justify-center transition-colors ${shape} ${cls}`}
