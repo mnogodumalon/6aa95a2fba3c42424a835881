@@ -181,6 +181,17 @@ function BuchungsanfrageInner({
               const preis = fieldNumber(r, 'grundpreis_pro_nacht') ?? 0;
               const reinigung = fieldNumber(r, 'endreinigung_preis');
               const foto = r.fields['foto'] as string | undefined;
+              const beschreibung = fieldText(r, 'beschreibung');
+              const ausstattungRaw = (r.fields['ausstattung'] ?? []) as Array<string | { key: string; label: string }>;
+              const ausstattungKeys = ausstattungRaw.map((x) => (typeof x === 'string' ? x : x.key));
+              const ausstattungLabels: Record<string, string> = {
+                seeblick: 'Seeblick',
+                kueche: 'Küche',
+                wlan: 'WLAN',
+                parkplatz: 'Parkplatz',
+                haustiere_erlaubt: 'Haustiere erlaubt',
+                balkon: 'Balkon',
+              };
               const isSelected = selectedWohnungId === r.id;
               return (
                 <button
@@ -203,6 +214,9 @@ function BuchungsanfrageInner({
                   )}
                   <div className="p-4 space-y-1">
                     <p className="font-semibold text-sm">{name}</p>
+                    {beschreibung && (
+                      <p className="text-xs text-muted-foreground">{beschreibung}</p>
+                    )}
                     <p className="text-sm text-muted-foreground">
                       {tx`${schlafplaetze} Schlafplätze`}
                     </p>
@@ -213,6 +227,18 @@ function BuchungsanfrageInner({
                       <p className="text-xs text-muted-foreground">
                         {tx`Endreinigung: ${reinigung} €`}
                       </p>
+                    )}
+                    {ausstattungKeys.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {ausstattungKeys.map((key) => (
+                          <span
+                            key={key}
+                            className="inline-block rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                          >
+                            {ausstattungLabels[key] ?? key}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </button>
