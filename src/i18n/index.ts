@@ -1423,7 +1423,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
         },
         "lookups": {
           "status": {
-            "anfrage": "Requested",
+            "anfrage": "Inquiry",
             "bestaetigt": "Confirmed",
             "eingecheckt": "Checked In",
             "ausgecheckt": "Checked Out",
@@ -1438,7 +1438,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
           "wohnung": "Apartment",
           "buchung": "Booking",
           "datum": "Cleaning Date",
-          "reinigungskraft": "Cleaning Staff",
+          "reinigungskraft": "Cleaner",
           "status": "Status",
           "bemerkungen": "Remarks"
         },

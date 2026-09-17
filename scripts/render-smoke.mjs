@@ -23,7 +23,7 @@
 // Exit 1 on any ERROR (the page job then repairs or fails); exit 0 with a
 // WARN when jsdom cannot be installed — a build never fails on infrastructure.
 //
-// Options: --page <slug> (repeatable), --keep (leave .smoke/ in place),
+// Options: --page <slug> (repeatable), --keep (leave bundles in .smoke/),
 //          --json <file> (machine-readable report).
 // Env:     RENDER_SMOKE_ALIASES = JSON {importPath: absoluteFile} — extra
 //          module aliases (the local test harness stubs @/components/ui/*).
@@ -75,11 +75,26 @@ const appMeta = readJson('app_metadata.json');
 const apps = (appMeta && appMeta.apps) || {};
 
 // ── 2. Dependencies: esbuild ships with vite; jsdom is fetched on demand ──────
-const require = createRequire(join(ROOT, 'package.json'));
+// jsdom is NOT in the template. It is installed into its own tiny tree under
+// .smoke/deps (36 packages, seconds) — never into the app's node_modules: an
+// `npm install --no-save` there makes npm reconcile the whole template tree
+// against the lockfile, minutes in a cold sandbox, and it may prune packages
+// the app needs.
+const DEPS_DIR = join(ROOT, SMOKE_DIR, 'deps');
+const appRequire = createRequire(join(ROOT, 'package.json'));
 
 async function loadDep(name) {
-  try { return await import(require.resolve(name)); } catch { return null; }
+  for (const base of [join(ROOT, 'package.json'), join(DEPS_DIR, 'package.json')]) {
+    try {
+      const req = base === join(ROOT, 'package.json') ? appRequire : createRequire(base);
+      return await import(req.resolve(name));
+    } catch { /* try the next tree */ }
+  }
+  return null;
 }
+
+const tStart = Date.now();
+const secs = (from) => ((Date.now() - from) / 1000).toFixed(1);
 
 let esbuild = await loadDep('esbuild');
 if (!esbuild) {
@@ -88,15 +103,22 @@ if (!esbuild) {
 }
 let jsdomMod = await loadDep('jsdom');
 if (!jsdomMod) {
+  const tInstall = Date.now();
   try {
-    console.log('render-smoke: installing jsdom (not in the template)…');
-    execSync('npm install --no-save --no-audit --no-fund --loglevel=error jsdom@26', {
-      cwd: ROOT, stdio: ['ignore', 'inherit', 'inherit'], timeout: 180000,
+    mkdirSync(DEPS_DIR, { recursive: true });
+    if (!existsSync(join(DEPS_DIR, 'package.json'))) {
+      writeFileSync(join(DEPS_DIR, 'package.json'), JSON.stringify({ name: 'render-smoke-deps', private: true, version: '0.0.0' }));
+    }
+    execSync('npm install --no-audit --no-fund --no-package-lock --loglevel=error jsdom@26', {
+      cwd: DEPS_DIR, stdio: ['ignore', 'inherit', 'inherit'], timeout: 180000,
     });
     jsdomMod = await loadDep('jsdom');
+    console.log(`render-smoke: jsdom installed into ${SMOKE_DIR}/deps in ${secs(tInstall)}s`);
   } catch (e) {
-    console.log(`WARN: render-smoke: jsdom install failed (${String(e && e.message || e).split('\n')[0]}) — smoke skipped`);
+    console.log(`WARN: render-smoke: jsdom install failed after ${secs(tInstall)}s (${String(e && e.message || e).split('\n')[0]}) — smoke skipped`);
   }
+} else {
+  console.log('render-smoke: jsdom present');
 }
 if (!jsdomMod) {
   console.log('WARN: render-smoke: jsdom not available — smoke skipped');
@@ -335,6 +357,11 @@ function installDom(slug, onJsdomError) {
     if (d && ('value' in d || d.get)) mirror(k);
   }
   for (const k of ['localStorage', 'sessionStorage', 'location', 'history', 'getComputedStyle', 'requestAnimationFrame', 'cancelAnimationFrame']) mirror(k);
+  // EventTarget members live on the prototype, not on the instance — Sentry
+  // and friends call `globalThis.addEventListener('pagehide', …)` directly.
+  for (const k of ['addEventListener', 'removeEventListener', 'dispatchEvent']) {
+    if (typeof win[k] === 'function') define(k, win[k].bind(win));
+  }
   // Media queries: the DatePicker asks for '(pointer: coarse)' and renders a
   // native <input type="date"> when it matches — the branch a script can fill.
   const mm = (q) => ({ matches: /pointer:\s*coarse/.test(q), media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; } });
@@ -774,11 +801,15 @@ async function smokePage(page) {
 
 // ── 8. Run ────────────────────────────────────────────────────────────────────
 for (const page of pages) {
+  const tPage = Date.now();
   const r = await smokePage(page);
+  r.seconds = Number(secs(tPage));
   report.push(r);
   const stepsWalked = r.steps.filter(s => typeof s.step === 'number').length;
   if (r.errors.length === 0) {
-    console.log(`render-smoke: ${page.slug} ${r.result === 'success' ? `OK (${stepsWalked} steps, summary confirmed, success page reached)` : r.result === 'rendered' ? 'OK (renders)' : `${r.result} (${r.warnings[0] || 'see report'})`}`);
+    console.log(`render-smoke: ${page.slug} ${r.result === 'success' ? `OK (${stepsWalked} steps, summary confirmed, success page reached)` : r.result === 'rendered' ? 'OK (renders)' : `${r.result} (${r.warnings[0] || 'see report'})`} in ${r.seconds}s`);
+  } else {
+    console.log(`render-smoke: ${page.slug} FAILED (${r.result}) after ${r.seconds}s`);
   }
 }
 
@@ -786,7 +817,14 @@ if (jsonOut) {
   try { writeFileSync(jsonOut, JSON.stringify(report, null, 2)); } catch { /* optional */ }
 }
 if (!keep) {
-  try { rmSync(join(ROOT, SMOKE_DIR), { recursive: true, force: true }); } catch { /* fine */ }
+  // Bundles and entries go; .smoke/deps (jsdom) and .smoke/records.json stay
+  // for a second pass in the same sandbox (repair round). The deploy removes
+  // the whole directory.
+  for (const page of pages) {
+    for (const f of [`entry-${page.slug}.tsx`, `bundle-${page.slug}.mjs`]) {
+      try { rmSync(join(ROOT, SMOKE_DIR, f), { force: true }); } catch { /* fine */ }
+    }
+  }
 }
 
 for (const w of warnings) console.log(`WARN: ${w}`);
@@ -794,4 +832,4 @@ if (errors.length > 0) {
   for (const e of errors) console.error(`ERROR: ${e}`);
   process.exit(1);
 }
-console.log(`render-smoke: OK (${pages.length} page${pages.length === 1 ? '' : 's'})`);
+console.log(`render-smoke: OK (${pages.length} page${pages.length === 1 ? '' : 's'}, ${secs(tStart)}s)`);

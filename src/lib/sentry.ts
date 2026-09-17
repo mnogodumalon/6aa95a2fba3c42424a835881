@@ -6,7 +6,7 @@ const ENVIRONMENT = "dashboard-6aa95a2fba3c42424a835881";
  *  the deployment's `version.json`. Exported so `lib/stale-bundle.ts` can tell a
  *  tab that is merely older than the live deployment apart from one whose asset
  *  is genuinely gone. One source for the fact; do not inject it a second time. */
-export const BUNDLE_VERSION = "0.0.421";
+export const BUNDLE_VERSION = "0.0.422";
 const APPGROUP_ID = "6aa95a2fba3c42424a835881";
 
 if (DSN) {
@@ -28,11 +28,6 @@ if (DSN) {
     // Neither the message nor `startViewTransition` exists in our own code —
     // do not go looking for it there.
     ignoreErrors: ['Transition was skipped'],
-    // browserSessionIntegration calls window.addEventListener during setupOnce
-    // via whenIdleOrHidden. In render-smoke (jsdom) globalThis.addEventListener
-    // is undefined, crashing every public page. Sessions are low-value for a
-    // single-page dashboard app; removing this integration is safe.
-    integrations: (defaults) => defaults.filter((i) => i.name !== 'BrowserSession'),
   });
   if (APPGROUP_ID) {
     Sentry.setTag('appgroup_id', APPGROUP_ID);
