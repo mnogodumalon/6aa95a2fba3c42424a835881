@@ -331,7 +331,7 @@ export const UI_CATALOG: Record<CoreLocale, Record<string, string>> = {
     "ppa_status_draft": "Entwurf",
     "ppa_publish": "Veröffentlichen",
     "ppa_pause": "Pausieren",
-    "ppa_open": "Öffnen",
+    "ppa_open": "Felder zeigen",
     "ppa_copy": "Link kopieren",
     "ppa_copied": "Kopiert!",
     "ppa_confirm_title": "Wirklich veröffentlichen?",
@@ -384,6 +384,22 @@ export const UI_CATALOG: Record<CoreLocale, Record<string, string>> = {
     "ppa_policy_changed": "{n} Anpassungen",
     "ppa_yes": "Ja",
     "ppa_no": "Nein",
+    "ppa_back_to_pages": "Zurück zu den öffentlichen Seiten",
+    "ppa_more": "Mehr",
+    "ppa_less": "Weniger",
+    "ppa_s_pick": "Besucher wählt hier einen bestehenden Eintrag aus",
+    "ppa_s_fixed": "Wird automatisch auf „{value}“ gesetzt, Besucher sieht das Feld nicht",
+    "ppa_s_never": "Die Seite fragt dieses Feld nicht ab",
+    "ppa_s_hidden": "Besucher sieht das Feld nicht",
+    "ppa_s_visitor_enters": "Besucher gibt ein",
+    "ppa_s_required": "Pflicht",
+    "ppa_s_optional": "freiwillig",
+    "ppa_s_labelled": "heißt „{label}“",
+    "ppa_s_summary": "{visible} Felder sichtbar · {required} Pflicht · {hidden} ausgeblendet · {fixed} fest",
+    "ppa_unsaved": "{n} ungespeicherte Änderungen",
+    "ppa_nothing_unsaved": "Alles gespeichert",
+    "ppa_view_page": "Seite ansehen",
+    "ppa_discard": "Verwerfen",
     "ia_title": "Abläufe",
     "ia_subtitle": "Geführte Abläufe für dein Team — vom Agenten gebaut, hier verwaltet.",
     "ia_new": "Neuer Ablauf",
@@ -924,7 +940,7 @@ export const UI_CATALOG: Record<CoreLocale, Record<string, string>> = {
     "ppa_status_draft": "Draft",
     "ppa_publish": "Publish",
     "ppa_pause": "Pause",
-    "ppa_open": "Open",
+    "ppa_open": "Show fields",
     "ppa_copy": "Copy link",
     "ppa_copied": "Copied!",
     "ppa_confirm_title": "Publish this page?",
@@ -977,6 +993,22 @@ export const UI_CATALOG: Record<CoreLocale, Record<string, string>> = {
     "ppa_policy_changed": "{n} adjustments",
     "ppa_yes": "Yes",
     "ppa_no": "No",
+    "ppa_back_to_pages": "Back to public pages",
+    "ppa_more": "More",
+    "ppa_less": "Less",
+    "ppa_s_pick": "Visitor picks an existing entry here",
+    "ppa_s_fixed": "Set automatically to \"{value}\", visitor does not see the field",
+    "ppa_s_never": "The page does not ask for this field",
+    "ppa_s_hidden": "Visitor does not see the field",
+    "ppa_s_visitor_enters": "Visitor enters",
+    "ppa_s_required": "required",
+    "ppa_s_optional": "optional",
+    "ppa_s_labelled": "labelled \"{label}\"",
+    "ppa_s_summary": "{visible} fields visible · {required} required · {hidden} hidden · {fixed} fixed",
+    "ppa_unsaved": "{n} unsaved changes",
+    "ppa_nothing_unsaved": "Everything saved",
+    "ppa_view_page": "View page",
+    "ppa_discard": "Discard",
     "ia_title": "Flows",
     "ia_subtitle": "Guided flows for your team — built by the agent, managed here.",
     "ia_new": "New flow",
@@ -1381,7 +1413,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
     }
   },
   "en": {
-    "appgroup": "Ferienwohnungen Seeblick",
+    "appgroup": "Vacation Rentals Seeblick",
     "apps": {
       "mitarbeiter": {
         "name": "Employees",
@@ -1412,7 +1444,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
           "name": "Apartment Name",
           "beschreibung": "Description",
           "stockwerk": "Floor",
-          "schlafplaetze": "Sleeping Capacity",
+          "schlafplaetze": "Sleeping Spots",
           "quadratmeter": "Square Meters",
           "grundpreis_pro_nacht": "Base Price per Night (€)",
           "endreinigung_preis": "Final Cleaning (€)",
@@ -1424,7 +1456,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
           "ausstattung": {
             "seeblick": "Lake View",
             "kueche": "Kitchen",
-            "wlan": "Wi-Fi",
+            "wlan": "WiFi",
             "parkplatz": "Parking",
             "haustiere_erlaubt": "Pets Allowed",
             "balkon": "Balcony"
@@ -1469,7 +1501,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
         },
         "lookups": {
           "status": {
-            "anfrage": "Requested",
+            "anfrage": "Inquiry",
             "bestaetigt": "Confirmed",
             "eingecheckt": "Checked In",
             "ausgecheckt": "Checked Out",
@@ -1491,7 +1523,7 @@ export const LABELS: Record<CoreLocale, LabelBundle> = {
         "lookups": {
           "status": {
             "offen": "Open",
-            "erledigt": "Completed"
+            "erledigt": "Done"
           }
         }
       }

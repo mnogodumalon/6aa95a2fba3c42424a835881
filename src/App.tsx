@@ -8,6 +8,7 @@ import { ErrorBusProvider } from '@/components/ErrorBus';
 import { Layout } from '@/components/Layout';
 import DashboardReady from '@/pages/DashboardReady';
 import PublicPagesAdmin from '@/pages/PublicPagesAdmin';
+import PublicPageFields from '@/pages/PublicPageFields';
 import IntentsAdmin from '@/pages/IntentsAdmin';
 // <custom:imports>
 const IntentNeueBuchungPage = lazy(() => import('@/pages/intents/NeueBuchungPage'));
@@ -80,6 +81,7 @@ export default function App() {
                 <Route index element={<DashboardReady />} />
                 <Route path="verwaltung/ablaeufe" element={<IntentsAdmin />} />
                 <Route path="verwaltung/oeffentliche-seiten" element={<PublicPagesAdmin />} />
+                <Route path="verwaltung/oeffentliche-seiten/:slug/felder" element={<PublicPageFields />} />
                 {/* <custom:routes> */}
                 <Route path="intents/neue-buchung" element={<Suspense fallback={<DashboardSkeleton />}><IntentNeueBuchungPage /></Suspense>} />
                 <Route path="intents/buchung-status" element={<Suspense fallback={<DashboardSkeleton />}><IntentBuchungStatusPage /></Suspense>} />

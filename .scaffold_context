@@ -14,7 +14,7 @@ index.css is pre-generated with the shared design system. Do NOT edit it.
 src/config/ai-features.ts is editable — set AI_PHOTO_SCAN['Entity'] = true to enable photo scan in dialogs.
 NEVER use Bash cat/echo/heredoc for file operations — always use Read/Write/Edit tools.
 
-Generated 140 scaffold files:
+Generated 141 scaffold files:
   - src/App.tsx
   - src/i18n/index.ts
   - src/i18n/common.ts
@@ -118,6 +118,7 @@ Generated 140 scaffold files:
   - src/components/PublicShell.tsx
   - src/lib/publicPagesAdmin.ts
   - src/pages/PublicPagesAdmin.tsx
+  - src/pages/PublicPageFields.tsx
   - src/lib/pageJobs.ts
   - src/components/PageJobDialog.tsx
   - src/pages/IntentsAdmin.tsx
