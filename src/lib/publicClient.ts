@@ -15,6 +15,7 @@
 
 import { Sentry } from '@/lib/sentry';
 import { LOOKUP_OPTIONS } from '@/types/app';
+import { setFieldPolicy, type FieldPolicy } from '@/lib/journey/policy';
 
 // ---------------------------------------------------------------------------
 // Runtime config (public-pages.json)
@@ -68,6 +69,12 @@ export interface PublicPageConfig {
   fields: PublicFieldConfig[];
   /** Custom pages: which app_id serves which op (list/create). */
   endpoints?: PublicEndpointConfig[];
+  /** Form pages: values the grant sets server-side (the owner's fixed values). */
+  preset_fields?: Record<string, unknown>;
+  /** The owner's field policy ("Felder anpassen"): hidden / required / label
+   *  per entity and field. Registered with the journey layer on load — the
+   *  page code never has to know it. */
+  policy?: { fields?: FieldPolicy } | null;
   /** Declared when the page is reached with `?<name>=<record_id>`. The page
    *  itself reads the value from the URL; this exists so the OWNER-facing
    *  management UI can offer one link per record instead of the bare page
@@ -177,10 +184,14 @@ async function loadArtifactConfig(): Promise<PublicPagesConfig | null> {
 export async function loadPublicPagesConfig(slug?: string): Promise<PublicPagesConfig | null> {
   const artifact = await loadArtifactConfig();
   if (!slug) return artifact;
-  if (artifact && artifact.pages[slug]) return artifact;
+  if (artifact && artifact.pages[slug]) {
+    setFieldPolicy(artifact.pages[slug].policy?.fields);
+    return artifact;
+  }
   const preview = await loadPreviewConfig(slug);
   if (preview) {
     previewActive = true;
+    setFieldPolicy(preview.pages[slug]?.policy?.fields);
     return preview;
   }
   return artifact;
@@ -573,7 +584,7 @@ function normalizeApplookupRefs(
  */
 function dropPresetFields(page: PublicPageConfig, fields: Record<string, unknown>): Record<string, unknown> {
   const ep = page.endpoints?.find(e => e.op === 'create' && e.app_id === page.app_id);
-  const preset = ep?.preset_fields;
+  const preset = ep?.preset_fields ?? page.preset_fields;
   if (!preset) return fields;
   const out = { ...fields };
   for (const key of Object.keys(preset)) delete out[key];

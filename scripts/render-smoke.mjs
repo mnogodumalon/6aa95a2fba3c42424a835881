@@ -255,6 +255,43 @@ function syntheticRecords(entity, n) {
 }
 
 const providedRecords = readJson(RECORDS_FILE) || {};
+// The owner's field policy per slug (page_job writes it from the page state):
+// the walk then sees the page as the visitor does — hidden fields gone,
+// fixed values as presets — and a step the policy emptied must be skipped.
+const POLICY_FILE = join(SMOKE_DIR, 'policy.json');
+const providedPolicy = readJson(POLICY_FILE) || {};
+
+function applyPolicy(cfgPage, policy) {
+  if (!policy || typeof policy !== 'object') return cfgPage;
+  const fieldRules = policy.fields || {};
+  const listRules = policy.lists || {};
+  for (const ep of cfgPage.endpoints || []) {
+    const rules = fieldRules[ep.entity] || {};
+    if (ep.op === 'create') {
+      const preset = { ...(ep.preset_fields || {}) };
+      ep.fields = (ep.fields || []).filter(f => {
+        const r = rules[f.key] || {};
+        if (r.fixed !== undefined && r.fixed !== null) preset[f.key] = r.fixed;
+        return !r.hidden && (r.fixed === undefined || r.fixed === null);
+      }).map(f => {
+        const r = rules[f.key] || {};
+        return { ...f, ...(r.required !== undefined && r.required !== null ? { required: Boolean(r.required) } : {}), ...(r.label ? { label: r.label } : {}) };
+      });
+      for (const [k, r] of Object.entries(rules)) if (r.fixed !== undefined && r.fixed !== null) preset[k] = r.fixed;
+      if (Object.keys(preset).length) ep.preset_fields = preset;
+    } else {
+      const hidden = new Set((listRules[ep.entity] || {}).hidden || []);
+      if (hidden.size) ep.fields = (ep.fields || []).filter(f => !hidden.has(f.key));
+    }
+  }
+  const primary = (cfgPage.endpoints || []).find(e => e.op === 'create');
+  if (primary) cfgPage.fields = primary.fields;
+  if (Object.keys(fieldRules).length) cfgPage.policy = { fields: fieldRules };
+  for (const k of ['title', 'description', 'thank_you_title', 'thank_you_message']) {
+    if (policy.texts && policy.texts[k]) cfgPage[k] = policy.texts[k];
+  }
+  return cfgPage;
+}
 const recordsCache = new Map();
 function recordsFor(entity) {
   if (recordsCache.has(entity)) return recordsCache.get(entity);
@@ -484,13 +521,18 @@ function click(el) {
 }
 
 function currentStep(doc) {
+  // The shell writes the step into the URL (`?step=n`, absent on step 1);
+  // that is the page's own numbering. The indicator's position is only a
+  // fallback — a skipped step (enabledIf, emptied by the owner's policy) is
+  // not rendered there, so positions and step numbers drift apart.
+  const m = /[?&]step=(\d+)/.exec(doc.defaultView.location.hash);
+  if (m) return Number(m[1]);
   const cur = doc.querySelector('[aria-current="step"]');
   if (cur) {
     const li = cur.closest('li');
     if (li && li.parentElement) return Array.from(li.parentElement.children).indexOf(li) + 1;
   }
-  const m = /[?&]step=(\d+)/.exec(doc.defaultView.location.hash);
-  return m ? Number(m[1]) : 1;
+  return 1;
 }
 
 function stepRegion(doc) {
@@ -610,7 +652,8 @@ async function smokePage(page) {
     return pageReport;
   }
 
-  const cfg = { version: 1, public_api_base: PUBLIC_API_BASE, pages: { [page.slug]: pageConfig(page) }, unpublished_count: 0 };
+  const cfg = { version: 1, public_api_base: PUBLIC_API_BASE, pages: { [page.slug]: applyPolicy(pageConfig(page), providedPolicy[page.slug]) }, unpublished_count: 0 };
+  if (providedPolicy[page.slug]) pageReport.policy = providedPolicy[page.slug];
   const log = { requests: [], created: [], unexpected: [] };
 
   const runtimeErrors = [];

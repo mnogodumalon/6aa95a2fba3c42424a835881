@@ -37,6 +37,8 @@ export interface PublicPageLinkParam {
 }
 
 export interface PublicPageSummary {
+  /** The owner's field policy, empty when untouched. */
+  policy?: PagePolicy;
   slug: string;
   type: PageType;
   origin: PageOrigin;
@@ -97,6 +99,65 @@ async function patchPage(slug: string, body: Record<string, unknown>): Promise<P
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(body),
   });
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+/** The owner's field policy — see the backend's normalize_policy. */
+export interface FieldPolicyRule {
+  hidden?: boolean;
+  required?: boolean;
+  fixed?: unknown;
+  label?: string;
+}
+
+export interface PagePolicy {
+  fields: Record<string, Record<string, FieldPolicyRule>>;
+  lists: Record<string, { hidden: string[] }>;
+  texts: Record<string, string>;
+}
+
+export interface PolicyRow {
+  key: string;
+  label: string;
+  fulltype: string;
+  declared: boolean;
+  required_platform: boolean;
+  hidden: boolean;
+  required: boolean | null;
+  fixed: unknown;
+  label_override: string | null;
+  pick: boolean;
+  options?: { key: string; label: string }[];
+}
+
+export interface PolicyCatalog {
+  policy: PagePolicy;
+  entities: { entity: string; label: string; fields: PolicyRow[] }[];
+  lists: { entity: string; label: string; fields: { key: string; label: string; hidden: boolean }[] }[];
+  texts: Record<string, string>;
+  page?: PublicPageSummary;
+}
+
+export async function getPolicy(slug: string): Promise<PolicyCatalog> {
+  const res = await fetch(
+    `${BASE}/${encodeURIComponent(APPGROUP_ID)}/${encodeURIComponent(slug)}/policy`,
+    { credentials: 'include', headers: { Accept: 'application/json' } },
+  );
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function updatePolicy(slug: string, policy: PagePolicy): Promise<PolicyCatalog> {
+  const res = await fetch(
+    `${BASE}/${encodeURIComponent(APPGROUP_ID)}/${encodeURIComponent(slug)}/policy`,
+    {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(policy),
+    },
+  );
   if (!res.ok) throw new Error(await readError(res));
   return res.json();
 }

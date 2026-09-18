@@ -10,6 +10,7 @@
  * signal, not a gate.
  */
 import { appLabel, fieldLabel, lookupLabel } from '@/i18n';
+import { policyLabel } from './policy';
 import { LOOKUP_OPTIONS } from '@/types/app';
 
 export type EntityKey = 'mitarbeiter' | 'wohnungen' | 'gaeste' | 'buchungen' | 'reinigungen';
@@ -677,8 +678,11 @@ export function ruleOf(entity: EntityKey, key: string): FieldRule | undefined {
   return FIELD_RULES[entity]?.[key];
 }
 
-/** The field label as the user sees it — runtime bundle first, generated label second. */
+/** The field label as the user sees it — the owner's policy label first (a
+ *  public page's "Felder anpassen"), runtime bundle second, generated label last. */
 export function labelOf(entity: EntityKey, key: string): string {
+  const own = policyLabel(entity, key);
+  if (own) return own;
   const fromBundle = fieldLabel(entity, key);
   if (fromBundle !== key) return fromBundle;
   return ruleOf(entity, key)?.label ?? key;

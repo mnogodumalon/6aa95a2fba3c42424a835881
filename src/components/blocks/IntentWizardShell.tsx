@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from 'react';
 import { usePublicWizardColumn } from '@/lib/journey/publicColumn';
+import { usePolicyVersion } from '@/lib/journey/usePolicy';
 import { useSearchParams } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -332,9 +333,28 @@ export function IntentWizardShell({
   const formsRef = useRef<StepForm[] | undefined>(forms);
   formsRef.current = forms;
 
+  // A step whose fields the owner's policy hid entirely has nothing left to
+  // ask — skip it like `enabledIf: false`, so the visitor never sees a step
+  // with a heading and no control (the render-smoke would call that a bug).
+  const policyVersion = usePolicyVersion();
+  const emptiedSteps = useMemo(() => {
+    const out = new Set<number>();
+    if (!forms || forms.length === 0) return out;
+    for (let n = 1; n <= steps.length; n++) {
+      let visible = 0;
+      let hidden = 0;
+      for (const f of forms) {
+        for (const k of f.keys) if (f.stepOf(k) === n) visible++;
+        for (const k of f.hiddenKeys ?? []) if (f.stepOf(k) === n) hidden++;
+      }
+      if (visible === 0 && hidden > 0) out.add(n);
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forms, steps, policyVersion]);
   const enabledSteps = useMemo(
-    () => steps.map((s, i) => (s.enabledIf === false ? 0 : i + 1)).filter(n => n > 0),
-    [steps],
+    () => steps.map((s, i) => (s.enabledIf === false || emptiedSteps.has(i + 1) ? 0 : i + 1)).filter(n => n > 0),
+    [steps, emptiedSteps],
   );
   const total = enabledSteps.length;
   const position = Math.max(1, enabledSteps.indexOf(currentStep) + 1);
@@ -379,11 +399,11 @@ export function IntentWizardShell({
 
   // A step that just became disabled while the user is on it: move on.
   useEffect(() => {
-    if (steps[currentStep - 1]?.enabledIf === false) {
+    if (steps[currentStep - 1]?.enabledIf === false || emptiedSteps.has(currentStep)) {
       const target = enabledSteps.find(n => n > currentStep) ?? enabledSteps[enabledSteps.length - 1] ?? 1;
-      onStepChange(target);
+      if (target !== currentStep) onStepChange(target);
     }
-  }, [steps, currentStep, enabledSteps, onStepChange]);
+  }, [steps, currentStep, enabledSteps, emptiedSteps, onStepChange]);
 
   // Sync step to URL params
   useEffect(() => {
@@ -622,7 +642,7 @@ export function IntentWizardShell({
           <ol className="flex items-start justify-center list-none m-0 p-0">
             {steps.map((step, idx) => {
               const n = idx + 1;
-              if (step.enabledIf === false) return null;
+              if (step.enabledIf === false || !enabledSteps.includes(n)) return null;
               const pos = enabledSteps.indexOf(n) + 1;
               const isDone = completed || n < currentStep;
               const isCurrent = !completed && n === currentStep;

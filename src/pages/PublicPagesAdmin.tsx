@@ -5,12 +5,13 @@ import {
 } from '@tabler/icons-react';
 import { PageShell } from '@/components/PageShell';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  listPublicPages, setPublished, getFields, updateFields, getShareLinks,
-  type PublicPageSummary, type FieldCatalogEntry, type ShareLink,
+  listPublicPages, setPublished, getPolicy, updatePolicy, getShareLinks,
+  type PublicPageSummary, type ShareLink, type PolicyCatalog, type PagePolicy, type PolicyRow,
 } from '@/lib/publicPagesAdmin';
 import { PageJobDialog, type PageJobTarget } from '@/components/PageJobDialog';
 import { JobStateBadge, JobStateRow } from '@/components/PageJobStatus';
@@ -57,13 +58,16 @@ export default function PublicPagesAdmin() {
   const [busySlug, setBusySlug] = useState<string | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [confirmSlug, setConfirmSlug] = useState<string | null>(null);
-  // Field editor: which page's fields we're editing, the catalog, and the
-  // working selection (a Set of chosen keys).
-  const [fieldsSlug, setFieldsSlug] = useState<string | null>(null);
-  const [catalog, setCatalog] = useState<FieldCatalogEntry[]>([]);
-  const [chosen, setChosen] = useState<Set<string>>(new Set());
-  const [fieldsLoading, setFieldsLoading] = useState(false);
-  const [savingFields, setSavingFields] = useState(false);
+  // Field table ("Felder anpassen"): the owner's policy for one page — what
+  // visitors see, what is required, fixed values, labels, texts. Saved as a
+  // whole; the backend turns it into grant + config without a rebuild.
+  const [policySlug, setPolicySlug] = useState<string | null>(null);
+  const [policyCat, setPolicyCat] = useState<PolicyCatalog | null>(null);
+  const [draft, setDraft] = useState<PagePolicy>({ fields: {}, lists: {}, texts: {} });
+  const [policyLoading, setPolicyLoading] = useState(false);
+  const [savingPolicy, setSavingPolicy] = useState(false);
+  const [policyError, setPolicyError] = useState<string | null>(null);
+  const [savedSlug, setSavedSlug] = useState<string | null>(null);
   // Per-record links: a page declaring a link_param is unusable through its
   // bare URL, so the owner picks the record here and copies THAT link.
   const [linksSlug, setLinksSlug] = useState<string | null>(null);
@@ -142,50 +146,110 @@ export default function PublicPagesAdmin() {
     }
   };
 
-  const openFields = async (slug: string) => {
-    setFieldsSlug(slug);
-    setFieldsLoading(true);
+  const openPolicy = async (slug: string) => {
+    setPolicySlug(slug);
+    setPolicyLoading(true);
+    setPolicyError(null);
     try {
-      const cat = await getFields(slug);
-      setCatalog(cat.available);
-      setChosen(new Set(cat.selected));
+      const cat = await getPolicy(slug);
+      setPolicyCat(cat);
+      setDraft({
+        fields: JSON.parse(JSON.stringify(cat.policy.fields || {})),
+        lists: JSON.parse(JSON.stringify(cat.policy.lists || {})),
+        texts: { ...(cat.policy.texts || {}) },
+      });
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setFieldsSlug(null);
+      setPolicySlug(null);
     } finally {
-      setFieldsLoading(false);
+      setPolicyLoading(false);
     }
   };
 
-  const toggleField = (entry: FieldCatalogEntry) => {
-    if (!entry.selectable || entry.locked) return;
-    setChosen(prev => {
-      const next = new Set(prev);
-      if (next.has(entry.key)) next.delete(entry.key);
-      else next.add(entry.key);
-      return next;
+  const ruleOf = (entity: string, key: string) => draft.fields[entity]?.[key] ?? {};
+  const setRule = (entity: string, key: string, patch: Record<string, unknown>) => {
+    setDraft(prev => {
+      const entityRules = { ...(prev.fields[entity] ?? {}) };
+      const next: Record<string, unknown> = { ...(entityRules[key] ?? {}), ...patch };
+      for (const k of Object.keys(next)) {
+        if (next[k] === undefined || next[k] === null || next[k] === '' || next[k] === false) delete next[k];
+      }
+      if (Object.keys(next).length === 0) delete entityRules[key];
+      else entityRules[key] = next;
+      return { ...prev, fields: { ...prev.fields, [entity]: entityRules } };
     });
   };
+  const listHidden = (entity: string) => draft.lists[entity]?.hidden ?? [];
+  const setListVisible = (entity: string, key: string, visible: boolean) => {
+    setDraft(prev => {
+      const hidden = new Set(prev.lists[entity]?.hidden ?? []);
+      if (visible) hidden.delete(key); else hidden.add(key);
+      return { ...prev, lists: { ...prev.lists, [entity]: { hidden: Array.from(hidden) } } };
+    });
+  };
+  const setText = (key: string, value: string) => {
+    setDraft(prev => ({ ...prev, texts: { ...prev.texts, [key]: value } }));
+  };
 
-  const saveFields = async () => {
-    if (!fieldsSlug) return;
-    setSavingFields(true);
+  const savePolicy = async () => {
+    if (!policySlug) return;
+    setSavingPolicy(true);
+    setPolicyError(null);
     try {
-      const updated = await updateFields(fieldsSlug, Array.from(chosen));
-      setPages(prev => ({ ...prev, [fieldsSlug]: updated }));
-      setError(null);
-      setFieldsSlug(null);
+      const cat = await updatePolicy(policySlug, draft);
+      if (cat.page) setPages(prev => ({ ...prev, [policySlug]: cat.page as PublicPageSummary }));
+      setSavedSlug(policySlug);
+      setTimeout(() => setSavedSlug(c => (c === policySlug ? null : c)), 2500);
+      setPolicySlug(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setPolicyError(e instanceof Error ? e.message : String(e));
     } finally {
-      setSavingFields(false);
+      setSavingPolicy(false);
     }
+  };
+
+  const policyCount = (page: PublicPageSummary): number => {
+    const pol = page.policy;
+    if (!pol) return 0;
+    const fields = Object.values(pol.fields || {}).reduce((n, rules) => n + Object.keys(rules).length, 0);
+    const lists = Object.values(pol.lists || {}).reduce((n, l) => n + (l.hidden?.length ?? 0), 0);
+    return fields + lists + Object.keys(pol.texts || {}).length;
+  };
+
+  const fixedControl = (entity: string, row: PolicyRow) => {
+    const rule = ruleOf(entity, row.key);
+    const fixed = rule.fixed;
+    const cls = 'h-9 w-full rounded-md border border-input bg-background px-2 text-sm';
+    if (row.options) {
+      return (
+        <select className={cls} value={fixed === undefined || fixed === null ? '' : String(fixed)} aria-label={t('ppa_col_fixed')}
+          onChange={e => setRule(entity, row.key, { fixed: e.target.value || undefined })}>
+          <option value="">{t('ppa_fixed_none')}</option>
+          {row.options.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+        </select>
+      );
+    }
+    if (row.fulltype.startsWith('bool')) {
+      return (
+        <select className={cls} value={fixed === true ? 'true' : fixed === false ? 'false' : ''} aria-label={t('ppa_col_fixed')}
+          onChange={e => setRule(entity, row.key, { fixed: e.target.value === '' ? undefined : e.target.value === 'true' })}>
+          <option value="">{t('ppa_fixed_none')}</option>
+          <option value="true">{t('ppa_yes')}</option>
+          <option value="false">{t('ppa_no')}</option>
+        </select>
+      );
+    }
+    if (row.pick || row.fulltype.startsWith('file')) return <span className="text-xs text-muted-foreground">—</span>;
+    return (
+      <Input value={fixed === undefined || fixed === null ? '' : String(fixed)} placeholder={t('ppa_fixed_none')} aria-label={t('ppa_col_fixed')}
+        onChange={e => setRule(entity, row.key, { fixed: e.target.value || undefined })} />
+    );
   };
 
   const entries = Object.values(pages).sort((a, b) => a.title.localeCompare(b.title));
   const confirmPage = confirmSlug ? pages[confirmSlug] : null;
-  const caps = confirmPage ? capabilities(confirmPage) : { submit: [] as string[], view: [] as string[] };
+  const caps: { submit: string[]; view: string[] } = confirmPage ? capabilities(confirmPage) : { submit: [], view: [] };
 
   return (
     <PageShell
@@ -227,13 +291,18 @@ export default function PublicPagesAdmin() {
                   <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
                     {originLabel(page.origin)}
                   </span>
+                  {policyCount(page) > 0 ? (
+                    <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                      {t('ppa_policy_changed', { n: policyCount(page) })}
+                    </span>
+                  ) : null}
                   {jobFor(page.slug) ? <JobStateBadge job={jobFor(page.slug)!} /> : null}
                   {jobFor(page.slug)?.status === 'failed' ? (
                     <button type="button" onClick={() => retryJob(jobFor(page.slug)!)} className="shrink-0 text-xs text-primary underline underline-offset-2">{t('pj_retry')}</button>
                   ) : null}
                 </div>
                 <span className={`text-xs ${page.published ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {page.published ? t('ppa_status_published') : t('ppa_status_draft')}
+                  {savedSlug === page.slug ? t('ppa_policy_saved') : page.published ? t('ppa_status_published') : t('ppa_status_draft')}
                 </span>
               </div>
 
@@ -300,17 +369,15 @@ export default function PublicPagesAdmin() {
                 <IconTrash size={18} stroke={1.5} />
               </button>
 
-              {page.type !== 'custom' ? (
-                <button
-                  type="button"
-                  title={t('ppa_fields')}
-                  aria-label={t('ppa_fields')}
-                  onClick={() => openFields(page.slug)}
-                  className="shrink-0 p-2 rounded-xl text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-                >
-                  <IconAdjustments size={18} stroke={1.5} />
-                </button>
-              ) : null}
+              <button
+                type="button"
+                title={t('ppa_policy_title')}
+                aria-label={t('ppa_policy_title')}
+                onClick={() => openPolicy(page.slug)}
+                className={`shrink-0 p-2 rounded-xl transition-colors ${policyCount(page) > 0 ? 'text-primary hover:bg-primary/10' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'}`}
+              >
+                <IconAdjustments size={18} stroke={1.5} />
+              </button>
 
               <Button
                 variant={page.published ? 'outline' : 'default'}
@@ -426,56 +493,122 @@ export default function PublicPagesAdmin() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!fieldsSlug} onOpenChange={v => !v && setFieldsSlug(null)}>
-        <DialogContent>
+      <Dialog open={!!policySlug} onOpenChange={v => !v && setPolicySlug(null)}>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{t('ppa_fields_title')}</DialogTitle>
-            <DialogDescription>{t('ppa_fields_intro')}</DialogDescription>
+            <DialogTitle>{t('ppa_policy_title')}</DialogTitle>
+            <DialogDescription>{t('ppa_policy_intro')}</DialogDescription>
           </DialogHeader>
-          {fieldsLoading ? (
+          {policyLoading || !policyCat ? (
             <div className="flex justify-center py-8">
               <IconLoader2 size={24} stroke={1.5} className="animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="max-h-[50vh] overflow-y-auto space-y-1 -mx-2 px-2">
-              {catalog.map(entry => {
-                const checked = entry.locked ? true : chosen.has(entry.key);
-                const disabled = !entry.selectable || entry.locked;
+            <div className="max-h-[60vh] overflow-y-auto space-y-6 -mx-2 px-2">
+              {policyCat.entities.map(ent => {
+                const declared = ent.fields.filter(f => f.declared);
+                const more = ent.fields.filter(f => !f.declared && !f.pick && !f.fulltype.startsWith('file'));
                 return (
-                  <label
-                    key={entry.key}
-                    className={`flex items-start gap-3 rounded-xl px-3 py-2 ${
-                      disabled ? 'opacity-60' : 'cursor-pointer hover:bg-accent'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      className="mt-1 h-4 w-4 shrink-0"
-                      checked={checked}
-                      disabled={disabled}
-                      onChange={() => toggleField(entry)}
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-sm">{entry.label}</span>
-                      {entry.locked ? (
-                        <span className="block text-xs text-muted-foreground">{t('ppa_field_required')}</span>
-                      ) : entry.reason === 'file' ? (
-                        <span className="block text-xs text-muted-foreground">{t('ppa_field_file')}</span>
-                      ) : entry.exposes_list ? (
-                        <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-500">
-                          <IconEye size={13} stroke={1.5} /> {t('ppa_field_exposes')}
-                        </span>
-                      ) : null}
-                    </span>
-                  </label>
+                  <section key={ent.entity} className="space-y-2">
+                    <h3 className="text-sm font-semibold">{t('ppa_policy_submit_section', { entity: ent.label })}</h3>
+                    <div className="overflow-x-auto rounded-xl border border-border">
+                      <table className="w-full text-sm">
+                        <thead className="bg-secondary text-secondary-foreground">
+                          <tr>
+                            <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider">{t('ppa_col_field')}</th>
+                            <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider">{t('ppa_col_visible')}</th>
+                            <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider">{t('ppa_col_required')}</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider">{t('ppa_col_fixed')}</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider">{t('ppa_col_label')}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {declared.map(row => {
+                            const rule = ruleOf(ent.entity, row.key);
+                            const fixed = rule.fixed !== undefined && rule.fixed !== null && rule.fixed !== '';
+                            const visible = !rule.hidden && !fixed;
+                            const required = rule.required ?? row.required_platform;
+                            return (
+                              <tr key={row.key} className="border-t border-border align-middle">
+                                <td className="px-3 py-2">
+                                  <span className={visible ? '' : 'text-muted-foreground line-through'}>{row.label}</span>
+                                  {row.pick ? <span className="block text-xs text-muted-foreground">{t('ppa_pick_locked')}</span> : null}
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <input type="checkbox" className="h-4 w-4" checked={visible} disabled={row.pick || fixed} aria-label={t('ppa_col_visible')}
+                                    onChange={e => setRule(ent.entity, row.key, { hidden: e.target.checked ? undefined : true })} />
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <input type="checkbox" className="h-4 w-4" checked={visible && required} disabled={!visible} aria-label={t('ppa_col_required')}
+                                    onChange={e => setRule(ent.entity, row.key, { required: e.target.checked === row.required_platform ? undefined : e.target.checked })} />
+                                </td>
+                                <td className="px-3 py-2 min-w-[10rem]">{fixedControl(ent.entity, row)}</td>
+                                <td className="px-3 py-2 min-w-[10rem]">
+                                  <Input value={rule.label ?? ''} placeholder={row.label} disabled={!visible} aria-label={t('ppa_col_label')}
+                                    onChange={e => setRule(ent.entity, row.key, { label: e.target.value || undefined })} />
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{t('ppa_fixed_hint')}</p>
+                    {more.length > 0 ? (
+                      <details className="rounded-xl border border-dashed border-border px-3 py-2">
+                        <summary className="cursor-pointer text-sm">{t('ppa_more_fields', { entity: ent.label })}</summary>
+                        <p className="mt-1 text-xs text-muted-foreground">{t('ppa_more_fields_hint')}</p>
+                        <div className="mt-2 space-y-2">
+                          {more.map(row => (
+                            <div key={row.key} className="grid grid-cols-[minmax(0,1fr)_minmax(0,12rem)] items-center gap-3 text-sm">
+                              <span>{row.label}</span>
+                              {fixedControl(ent.entity, row)}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    ) : null}
+                  </section>
                 );
               })}
+
+              {policyCat.lists.map(lst => (
+                <section key={`list-${lst.entity}`} className="space-y-2">
+                  <h3 className="text-sm font-semibold">{t('ppa_policy_list_section', { entity: lst.label })}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {lst.fields.map(col => {
+                      const hidden = listHidden(lst.entity).includes(col.key);
+                      return (
+                        <label key={col.key} className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-sm ${hidden ? 'border-border text-muted-foreground' : 'border-primary/40 bg-primary/5'}`}>
+                          <input type="checkbox" className="h-4 w-4" checked={!hidden} onChange={e => setListVisible(lst.entity, col.key, e.target.checked)} />
+                          {col.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold">{t('ppa_policy_texts')}</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {([['title', 'ppa_text_title'], ['description', 'ppa_text_description'], ['thank_you_title', 'ppa_text_thanks_title'], ['thank_you_message', 'ppa_text_thanks_message']] as const).map(([key, labelKey]) => (
+                    <label key={key} className="space-y-1 text-sm">
+                      <span className="text-xs font-medium text-muted-foreground">{t(labelKey)}</span>
+                      <Input value={draft.texts[key] ?? ''} placeholder={policyCat.texts[key] ?? ''} onChange={e => setText(key, e.target.value)} />
+                    </label>
+                  ))}
+                </div>
+              </section>
+              {policyError ? (
+                <p className="flex items-center gap-2 text-sm text-destructive"><IconAlertTriangle size={16} stroke={1.5} /> {policyError}</p>
+              ) : null}
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setFieldsSlug(null)}>{t('ppa_cancel')}</Button>
-            <Button onClick={saveFields} disabled={savingFields || fieldsLoading}>
-              {savingFields ? <IconLoader2 size={16} stroke={1.5} className="animate-spin" /> : t('ppa_save')}
+            <Button variant="outline" onClick={() => setPolicySlug(null)}>{t('ppa_cancel')}</Button>
+            <Button onClick={savePolicy} disabled={savingPolicy || policyLoading || !policyCat}>
+              {savingPolicy ? <IconLoader2 size={16} stroke={1.5} className="animate-spin" /> : t('ppa_save')}
             </Button>
           </DialogFooter>
         </DialogContent>

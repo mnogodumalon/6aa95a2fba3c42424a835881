@@ -439,7 +439,10 @@ function checkEndpoint(slug, ep, pageSrc, pageFile, where = SURFACE) {
         const mentionsOption = optionWords.some(w => pageRequest.includes(w));
         if (options && mentionsField && !mentionsOption) {
           errors.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${val}', but the owner's request names '${c.label || key}' with a value this field does not offer (options: ${options.join(', ')}). Do not substitute: leave '${key}' out of ${bag} and say in your summary that the requested value does not exist`);
-        } else if (!mentionsField && !mentionsOption) {
+        } else if (!mentionsField) {
+          // An option word elsewhere in the text is no order (live: "Beitrag für
+          // Erwachsene und Kinder" turned into beitragsklasse = 'erwachsener' for
+          // every new member) — the owner has to name the FIELD.
           errors.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${JSON.stringify(val)}' although the owner never asked for '${c.label || key}' — a value nobody ordered lands in every record this page writes. Leave '${key}' out of ${bag}; if the record cannot do without it, ask the visitor (a field on the page) and name the choice in your summary`);
         }
       }
@@ -480,8 +483,19 @@ function checkEndpoint(slug, ep, pageSrc, pageFile, where = SURFACE) {
       const linked = new RegExp(`link\\s*:\\s*\\{[^}]*\\b${k}\\s*:`).test(pageSrc);
       const preset = key in (ep.preset_fields || {}) || key in (ep.default_fields || {});
       const filledByPage = new RegExp(`\\bvalues\\s*:[^;]*?\\b${k}\\s*:|set\\(\\s*['"]${k}['"]\\s*,`).test(pageSrc);
-      if (bound || linked || preset) continue;
+      const prefilled = new RegExp(`\\binitial\\s*:\\s*\\{[^}]*\\b${k}\\s*:`).test(pageSrc);
       const c = controls[key] || {};
+      // A prefilled control is a value nobody ordered with a visitor who did
+      // not object (live: `initial: { status: 'angenommen' }` behind a pill
+      // group the visitor never touches). The owner has to name the field.
+      if (prefilled && pageRequest) {
+        const named = [key, c.label].map(lc).filter(w => w.length >= 3).some(w => pageRequest.includes(w));
+        if (!named) {
+          errors.push(`${pageFile || where}: page '${slug}' prefills '${ep.entity}.${key}' (useStepForm initial) although the owner never asked for '${c.label || key}' — a prefilled value lands in every record whose visitor does not change it. Drop '${key}' from the page; if the record cannot do without it, ask the visitor without a default`);
+          continue;
+        }
+      }
+      if (bound || linked || preset) continue;
       const computedMoney = MONEY.test(key) && new RegExp(`set\\(\\s*['"]${k}['"]\\s*,\\s*[^)]*[*+]|\\b${k}\\s*:\\s*[^,}]*[*+]|const\\s+${k}\\s*=\\s*[^;]*[*+]`).test(pageSrc);
       if (computedMoney) {
         errors.push(`${pageFile || where}: page '${slug}' computes the amount '${key}' in the browser and writes it into '${ep.entity}' — a visitor's browser never sets a price (it can be edited before submit, and it drifts from the owner's rules). Drop '${key}' from the create endpoint; a tool prices the record after it exists, the page may only DISPLAY an estimate`);
@@ -492,6 +506,23 @@ function checkEndpoint(slug, ep, pageSrc, pageFile, where = SURFACE) {
       const words = [key, c.label].map(lc).filter(w => w.length >= 3);
       if (words.some(w => pageRequest.includes(w))) continue;
       errors.push(`${pageFile || where}: page '${slug}' fills '${ep.entity}.${key}' itself (plan values / form.set) although no visitor enters it and the owner never asked for '${c.label || key}' — a value nobody ordered lands in every record. Drop '${key}' from the create endpoint and from the page; if the record cannot do without it, ask the visitor for it`);
+    }
+  }
+  // 3z. Internal state is the operator's, never the visitor's. A visitor who
+  //     picks the order status ("Auftragsstatus: angenommen") or the customer
+  //     type on a public page writes workflow state nobody ordered (live: the
+  //     repair page moved status from a preset into a pill group). Such a
+  //     field stays off the page unless the owner asked for exactly that.
+  if (ep.op === 'create' && appMeta && pageRequest) {
+    const controls = appMeta.apps?.[ep.entity]?.controls || {};
+    const lc = (x) => String(x ?? '').toLowerCase().trim();
+    const STATE = /^(status|zustand|phase|stufe|prioritaet|priorität|bearbeiter|zugewiesen|freigabe|freigegeben|bezahlt|erledigt|abgeschlossen|kategorie|typ|art)$|_status$|_typ$/i;
+    for (const key of ep.fields || []) {
+      if (!STATE.test(key)) continue;
+      const c = controls[key] || {};
+      const named = [key, c.label].map(lc).filter(w => w.length >= 3).some(w => pageRequest.includes(w));
+      if (named) continue;
+      errors.push(`${where}: page '${slug}' lets the visitor set '${ep.entity}.${key}' (${c.label || key}) — internal state belongs to the operator, and the owner never asked for it. Remove '${key}' from the create endpoint and the page; the record gets its state from the operator or a tool afterwards`);
     }
   }
   // A list endpoint without an explicit projection is rejected by the

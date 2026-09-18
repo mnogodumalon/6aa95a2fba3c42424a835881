@@ -27,6 +27,8 @@ import { formatFieldValue, formatRange, type RangeUnit } from './format';
 import { FIELD_RULES, isEmptyValue, labelOf, optionsOf, type EntityKey, type FieldRule, type RecordFieldKey } from './rules';
 import { requiredMessage } from './messages';
 import { occupancyRuleOf } from './occupancy';
+import { isHiddenByPolicy, policyRequired } from './policy';
+import { usePolicyVersion } from './usePolicy';
 
 export type FormValues = Record<string, unknown>;
 
@@ -177,6 +179,8 @@ export interface StepForm<E extends EntityKey = EntityKey> {
   readonly entity: E;
   readonly id: string;
   readonly keys: string[];
+  /** Keys of `fields` the owner's policy hides — the shell skips a step that has only these. */
+  readonly hiddenKeys: string[];
   readonly rules: Record<string, FieldRule>;
   readonly values: FormValues;
   /** Display names learned while picking records, keyed by field key and by record id. */
@@ -286,10 +290,24 @@ export function useStepForm<E extends EntityKey>(entity: E, options: StepFormOpt
     [entity],
   );
   const fieldsKey = options.fields?.join('|') ?? '';
-  const keys = useMemo(
+  // The owner's field policy (public pages, "Felder anpassen"): a hidden key
+  // is not a key of this form — not validated, not summarised, not sent. The
+  // policy arrives with the page config, after the first render.
+  const policyVersion = usePolicyVersion();
+  const allKeys = useMemo(
     () => options.fields ?? Object.keys(rules).filter(k => rules[k].writable),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [rules, fieldsKey],
+  );
+  const keys = useMemo(
+    () => allKeys.filter(k => !isHiddenByPolicy(entity, k)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allKeys, entity, policyVersion],
+  );
+  const hiddenKeys = useMemo(
+    () => allKeys.filter(k => isHiddenByPolicy(entity, k)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allKeys, entity, policyVersion],
   );
   const formId = options.id ?? entity;
   const stepsMap = options.steps ?? {};
@@ -318,8 +336,9 @@ export function useStepForm<E extends EntityKey>(entity: E, options: StepFormOpt
   const errorId = useCallback((key: string) => `${formId}-${key}-error`, [formId]);
   const isRequired = useCallback(
     (key: string) =>
-      requiredOverride[key] ?? (key === occupancyResource && keys.includes(key) ? true : rules[key]?.required ?? false),
-    [requiredOverride, rules, occupancyResource, keys],
+      policyRequired(entity, key) ?? requiredOverride[key] ?? (key === occupancyResource && keys.includes(key) ? true : rules[key]?.required ?? false),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [requiredOverride, rules, occupancyResource, keys, entity, policyVersion],
   );
 
   const rangeEndingAt = (key: string) => Object.values(rangesRef.current).find(r => r.to === key);
@@ -653,5 +672,6 @@ export function useStepForm<E extends EntityKey>(entity: E, options: StepFormOpt
     fieldId,
     summary,
     payload,
+    hiddenKeys,
   };
 }

@@ -1,6 +1,8 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { Label } from '@/components/ui/label';
 import { labelOf } from '@/lib/journey/rules';
+import { isHiddenByPolicy } from '@/lib/journey/policy';
+import { usePolicyVersion } from '@/lib/journey/usePolicy';
 import type { StepForm } from '@/lib/journey/useStepForm';
 
 /**
@@ -44,8 +46,12 @@ export function useEnclosingField(): string | null {
 }
 
 export function Field({ form, name, label, hint, hideLabel = false, children, className = '' }: FieldProps) {
+  usePolicyVersion();
   const id = form.fieldId(name);
   const error = form.error(name);
+  // The owner hid this field (public page policy): no label, no control, no
+  // error — and useStepForm already keeps it out of validation and payload.
+  if (isHiddenByPolicy(form.entity, name)) return null;
   return (
     <FieldContext.Provider value={name}>
     <div className={`space-y-1.5 ${className}`} data-field={name}>
